@@ -13,4 +13,9 @@ public class LivingEntity : MonoBehaviour
     {
         
     }
+
+    protected virtual void Die ()
+    {
+        Destroy(gameObject);
+    }
 }
