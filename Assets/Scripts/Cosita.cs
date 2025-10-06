@@ -10,8 +10,8 @@ public class Cosita : LivingEntity
     // Propiedades básicas
     [SerializeField] public float health;     // Salud de la cosita
     [SerializeField] public float speed;
-    [SerializeField] public float hydrated;
-    [SerializeField] public float sated;
+    [SerializeField] public int hydrated;
+    [SerializeField] public int sated;
     [SerializeField] public float sensingRange;
 
     public Transform target;
@@ -20,10 +20,12 @@ public class Cosita : LivingEntity
 
 
     ///UI
+    public HUDBar hungerBar;
 
     public TMP_Text targetUI;
     public TMP_Text goalUI;
     public TMP_Text ThirstyUI;
+    //public TMP_Text satedUI;
     CreatureActions actionDoing = CreatureActions.Idle;
 
     //DEBUG
@@ -42,13 +44,13 @@ public class Cosita : LivingEntity
         //Debug.Log("INIT COSITA");
         specie = Specie.Cosita;
         target = null;
-        boxColliderCosita = GetComponent<BoxCollider>();    
+        boxColliderCosita = GetComponent<BoxCollider>();
+        hungerBar.SetMaxValue(sated);
         UpdateUICosita();
        
 
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         ChooseNextAction();
-
 
 
 
@@ -136,6 +138,7 @@ public class Cosita : LivingEntity
     {
         goalUI.text = actionDoing.ToString();
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
+        hungerBar.SetSliderValue(sated);
         if (target)
         {
             targetUI.text = "Target: " + target.name;
@@ -205,6 +208,7 @@ public class Cosita : LivingEntity
     public void Walk()
     {
         hydrated = hydrated - 5;
+        sated = sated - 5;
         cont++;
 
         if (!target && actionDoing == CreatureActions.LookingForWater) // I didnt see water in my range of view and im thirsty
@@ -253,7 +257,7 @@ public class Cosita : LivingEntity
                 {
                     Debug.Log("BEBIENDO AGUA");
 
-                    hydrated = 100f;
+                    hydrated = 100;
                     target = null;
                     actionDoing = CreatureActions.Drinking;
                     break;

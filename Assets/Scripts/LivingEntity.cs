@@ -6,13 +6,6 @@ public class LivingEntity : MonoBehaviour
 {
     protected Specie specie;
     
-    
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     protected virtual void Die ()
     {
