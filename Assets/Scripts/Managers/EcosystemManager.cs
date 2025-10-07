@@ -38,6 +38,8 @@ public class EcosystemManager : MonoBehaviour
         {
             Debug.Log("There is no population initialized");
         }
+
+
         
     }
 

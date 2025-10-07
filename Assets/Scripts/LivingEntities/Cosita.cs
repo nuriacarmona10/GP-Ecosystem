@@ -20,10 +20,13 @@ public class Cosita : LivingEntity
 
 
     ///UI
+    
     public HUDBar hungerBar;
+    public HUDBar waterBar;
+    public TMP_Text goalUI;
+
 
     public TMP_Text targetUI;
-    public TMP_Text goalUI;
     public TMP_Text ThirstyUI;
     //public TMP_Text satedUI;
     CreatureActions actionDoing = CreatureActions.Idle;
@@ -46,6 +49,7 @@ public class Cosita : LivingEntity
         target = null;
         boxColliderCosita = GetComponent<BoxCollider>();
         hungerBar.SetMaxValue(sated);
+        waterBar.SetMaxValue(hydrated);
         UpdateUICosita();
        
 
@@ -109,6 +113,10 @@ public class Cosita : LivingEntity
         {
             FindWater();
         }
+        else if ( sated < 50f && !target)
+        {
+            FindFood();
+        }
         else
         {
             Walk();
@@ -139,6 +147,8 @@ public class Cosita : LivingEntity
         goalUI.text = actionDoing.ToString();
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         hungerBar.SetSliderValue(sated);
+        waterBar.SetSliderValue(hydrated);
+
         if (target)
         {
             targetUI.text = "Target: " + target.name;
@@ -150,14 +160,14 @@ public class Cosita : LivingEntity
         }
 
     }
-    void OnDrawGizmos()
-    {
-        // Configura el color del radar (por ejemplo, semi-transparente y rojo)
-        Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
+    //void OnDrawGizmos()
+    //{
+    //    // Configura el color del radar (por ejemplo, semi-transparente y rojo)
+    //    Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
 
-        // Dibuja una esfera en la posición del objeto (el radar de 15m)
-        Gizmos.DrawSphere(transform.position, sensingRange);
-    }
+    //    // Dibuja una esfera en la posición del objeto (el radar de 15m)
+    //    Gizmos.DrawSphere(transform.position, sensingRange);
+    //}
 
     private void FindWater()
     {
@@ -177,12 +187,7 @@ public class Cosita : LivingEntity
         {
             Walk();
         }
-        //else // si no esta en mi rango de visión
-        //{
-        //    //Aqui tengo que poner quiza otro comportamiento en vez de Walk randomly, quiza andar en linea recta.
-        //    //Pero este blucle de ejecúción no está muy bien porque no tiene mucha lógica.
-        //    Walk();
-        //}
+        
     }
     private void FindFood()
     {

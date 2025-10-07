@@ -4,30 +4,35 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    public float moveSpeed = 10f;   // Velocidad de movimiento
-    public float liftSpeed = 5f;    // Velocidad de subida/bajada
-    public float rotationSpeed = 100f;  // Velocidad de rotación
+    public float speed = 10.0f; // Velocidad de movimiento
+    public float rotationSpeed = 100.0f; // Velocidad de rotación
+    public float zoomSpeed = 10.0f; // Velocidad de zoom
 
-    void Update()
+    private void Update()
     {
-        // Movimiento horizontal con W, A, S, D
-        float moveForwardBackward = Input.GetAxis("Vertical") * moveSpeed * Time.deltaTime;
-        float moveLeftRight = Input.GetAxis("Horizontal") * moveSpeed * Time.deltaTime;
+        // Movimiento con WASD o teclas de flechas (movimiento en X y Z)
+        float horizontal = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
+        float vertical = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        transform.Translate(horizontal, 0, vertical);
 
-        // Movimiento vertical con Q y E (subir/bajar)
-        float moveUpDown = 0f;
-        if (Input.GetKey(KeyCode.Q)) moveUpDown = -liftSpeed * Time.deltaTime;
-        if (Input.GetKey(KeyCode.E)) moveUpDown = liftSpeed * Time.deltaTime;
+        // Movimiento de subir y bajar con Q y E (movimiento en Y)
+        if (Input.GetKey(KeyCode.Q)) // Si se presiona la tecla Q
+        {
+            transform.Translate(Vector3.down * speed * Time.deltaTime); // Baja la cámara
+        }
+        if (Input.GetKey(KeyCode.E)) // Si se presiona la tecla E
+        {
+            transform.Translate(Vector3.up * speed * Time.deltaTime); // Sube la cámara
+        }
 
-        // Rotación de la cámara con el ratón (si prefieres usar el ratón para mover la cámara)
-        float rotationX = Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
-        float rotationY = -Input.GetAxis("Mouse Y") * rotationSpeed * Time.deltaTime;
+            float mouseX = Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
+            float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed * Time.deltaTime;
+            transform.Rotate(Vector3.up * mouseX, Space.World);
+            transform.Rotate(Vector3.left * mouseY, Space.Self);
+        
 
-        // Mover la cámara
-        Vector3 move = new Vector3(moveLeftRight, moveUpDown, moveForwardBackward);
-        transform.Translate(move, Space.World);
-
-        // Rotar la cámara con el ratón
-        transform.Rotate(rotationY, rotationX, 0);
+        // Zoom con la rueda del ratón
+        float zoom = Input.GetAxis("Mouse ScrollWheel") * zoomSpeed;
+        Camera.main.fieldOfView = Mathf.Clamp(Camera.main.fieldOfView - zoom, 20, 100); // Ajuste del zoom
     }
 }
