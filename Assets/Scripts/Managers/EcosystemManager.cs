@@ -25,13 +25,14 @@ public class EcosystemManager : MonoBehaviour
                 for (int i = 0; i < specie.count; i++)
                 {
                     Vector3 randomSpawn = new Vector3(Random.Range(-24.5f, 24.5f), 0.25f, Random.Range(-24.5f, 24.5f));
-                    GameObject cosita = Instantiate(specie.prefab, randomSpawn, Quaternion.identity);
-                    Cosita cos = cosita.GetComponent<Cosita>();
+                    GameObject entity = Instantiate(specie.prefab, randomSpawn, Quaternion.identity);
+                    LivingEntity cos = entity.GetComponent<LivingEntity>();
                     cos.Init();
+
                 }
-                   
-                
-                
+
+
+
             }
         }
         else
@@ -43,9 +44,4 @@ public class EcosystemManager : MonoBehaviour
         
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

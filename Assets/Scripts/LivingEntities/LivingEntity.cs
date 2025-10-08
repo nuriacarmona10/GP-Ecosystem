@@ -6,6 +6,10 @@ public class LivingEntity : MonoBehaviour
 {
     protected Specie specie;
     
+    public virtual void Init()
+    {
+
+    }
 
     protected virtual void Die ()
     {

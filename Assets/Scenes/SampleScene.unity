@@ -329,7 +329,7 @@ Transform:
   m_GameObject: {fileID: 154579592}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.47, y: 0.03, z: 4.97}
+  m_LocalPosition: {x: 11.47, y: 0.03, z: -7.15}
   m_LocalScale: {x: 0.25, y: 0.25, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -366,6 +366,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initialPopulations:
   - prefab: {fileID: 3084675470560522, guid: 22ca785036bb16a4487b4920bf742c0e, type: 3}
+    count: 20
+  - prefab: {fileID: 289972011261474896, guid: 76b9486c7111d944c83c91e83f367c00, type: 3}
     count: 20
 --- !u!4 &324440449
 Transform:
@@ -482,7 +484,7 @@ Transform:
   m_GameObject: {fileID: 493563391}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.47, y: 0.03, z: -7.18}
+  m_LocalPosition: {x: -11.47, y: 0.03, z: -15.29}
   m_LocalScale: {x: 0.25, y: 0.25, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -687,9 +689,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5c756dccc1c4e24cb2fc89ad8131a8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  liftSpeed: 5
+  speed: 10
   rotationSpeed: 100
+  zoomSpeed: 10
 --- !u!1 &1465774064
 GameObject:
   m_ObjectHideFlags: 0
@@ -790,7 +792,7 @@ Transform:
   m_GameObject: {fileID: 1465774064}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.47, y: 0.03, z: 16.11}
+  m_LocalPosition: {x: -4.5, y: 0.03, z: 13.1}
   m_LocalScale: {x: 0.25, y: 0.25, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -297,8 +297,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 100
   speed: 1
-  hydrated: 55
-  sated: 100
+  hydrated: 100
+  sated: 50
   sensingRange: 5
   target: {fileID: 0}
   hungerBar: {fileID: 1978001433911685110}
@@ -467,9 +467,9 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 20
+  m_MaxValue: 100
   m_WholeNumbers: 0
-  m_Value: 8.47
+  m_Value: 1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1908,9 +1908,9 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 20
+  m_MaxValue: 100
   m_WholeNumbers: 0
-  m_Value: 8.47
+  m_Value: 1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []

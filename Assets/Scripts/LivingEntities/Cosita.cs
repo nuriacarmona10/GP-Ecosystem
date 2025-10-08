@@ -40,16 +40,16 @@ public class Cosita : LivingEntity
     private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
     private bool isDoingAction = false;
 
-   
 
-    public void Init()
+
+    public override void Init()
     {
         //Debug.Log("INIT COSITA");
         specie = Specie.Cosita;
         target = null;
         boxColliderCosita = GetComponent<BoxCollider>();
-        hungerBar.SetMaxValue(sated);
-        waterBar.SetMaxValue(hydrated);
+        hungerBar.SetMaxValue(100);
+        waterBar.SetMaxValue(100);
         UpdateUICosita();
        
 
@@ -160,14 +160,14 @@ public class Cosita : LivingEntity
         }
 
     }
-    //void OnDrawGizmos()
-    //{
-    //    // Configura el color del radar (por ejemplo, semi-transparente y rojo)
-    //    Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
+    void OnDrawGizmos()
+    {
+        // Configura el color del radar (por ejemplo, semi-transparente y rojo)
+        Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
 
-    //    // Dibuja una esfera en la posición del objeto (el radar de 15m)
-    //    Gizmos.DrawSphere(transform.position, sensingRange);
-    //}
+        // Dibuja una esfera en la posición del objeto (el radar de 15m)
+        Gizmos.DrawSphere(transform.position, sensingRange);
+    }
 
     private void FindWater()
     {
@@ -192,6 +192,18 @@ public class Cosita : LivingEntity
     private void FindFood()
     {
         actionDoing = CreatureActions.LookingForFood;
+        Transform thingWanted = SensingEnvironment("Food");
+        if (thingWanted)
+        {
+            target = thingWanted;
+            targetUI.text = target.name.ToString();
+
+
+        }
+        else
+        {
+            Walk();
+        }
 
     }
     public Vector3 GetRandomDirection()
@@ -216,7 +228,7 @@ public class Cosita : LivingEntity
         sated = sated - 5;
         cont++;
 
-        if (!target && actionDoing == CreatureActions.LookingForWater) // I didnt see water in my range of view and im thirsty
+        if (!target && ( actionDoing == CreatureActions.LookingForWater || actionDoing == CreatureActions.LookingForFood)) // I didnt see water in my range of view and im thirsty
         {
             //choose one direction and go in the same direction until I see water or I die
             if (desperateDirection == Vector3.zero)
@@ -230,6 +242,7 @@ public class Cosita : LivingEntity
 
 
         }
+        
         else if (!target)
         {  // I only walk without direcction
 
@@ -260,11 +273,19 @@ public class Cosita : LivingEntity
             {
                 if (collider.CompareTag(target.gameObject.tag))
                 {
-                    Debug.Log("BEBIENDO AGUA");
+                    if (target.gameObject.tag.Equals("Water"))
+                    {
+                        actionDoing = CreatureActions.Drinking;
+                        hydrated = 100;
 
-                    hydrated = 100;
+                    }
+                    else if (target.gameObject.tag.Equals("Food"))
+                    {
+                        actionDoing = CreatureActions.Eating;
+                        sated = 100;
+                    }
+
                     target = null;
-                    actionDoing = CreatureActions.Drinking;
                     break;
                 }
             }
