@@ -8,7 +8,8 @@ public enum CreatureActions
     Exploring,
     Eating,
     Drinking,
-    LookingForWater,
-    LookingForFood
-  
+    GoingToFood,
+    GoingToWater,
+    WalkingDesperately
+
 }

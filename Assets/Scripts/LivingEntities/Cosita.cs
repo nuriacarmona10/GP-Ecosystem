@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using TMPro;
+using UnityEditor.Experimental.GraphView;
 
 public class Cosita : LivingEntity
 {
@@ -16,11 +17,13 @@ public class Cosita : LivingEntity
 
     public Transform target;
     Vector3 desperateDirection;
+    Vector3 currentDirection;
     BoxCollider boxColliderCosita;
 
 
+
     ///UI
-    
+
     public HUDBar hungerBar;
     public HUDBar waterBar;
     public TMP_Text goalUI;
@@ -50,11 +53,12 @@ public class Cosita : LivingEntity
         boxColliderCosita = GetComponent<BoxCollider>();
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
+        currentDirection = transform.forward;
         UpdateUICosita();
        
 
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
-        ChooseNextAction();
+        //ChooseNextAction();
 
 
 
@@ -83,8 +87,10 @@ public class Cosita : LivingEntity
         if (!isDoingAction)
         {
             ChooseNextAction();
+
+
         }
-        if(hydrated < 0)
+        if (hydrated < 0)
         {
             Die();
             Debug.Log("Me MORIII");
@@ -96,9 +102,9 @@ public class Cosita : LivingEntity
     IEnumerator ActionCooldown()
     {
         
-                // Inicia la acción
-                isDoingAction = true;
+                
                 // Espera 5 segundos antes de permitir la siguiente acción
+
                 yield return new WaitForSeconds(5f);
                 isDoingAction = false;
        
@@ -108,19 +114,25 @@ public class Cosita : LivingEntity
     }
     public void ChooseNextAction()
     {
+        // Inicia la acción
+        isDoingAction = true;
 
-        if (hydrated < 50f && !target)
+        if (hydrated < 50f )
         {
-            FindWater();
+            FindResource("Water");
         }
-        else if ( sated < 50f && !target)
+        else if ( sated < 50f )
         {
-            FindFood();
+            FindResource("Food");
+
         }
         else
         {
-            Walk();
+            actionDoing = CreatureActions.Exploring;
         }
+        
+
+        Act();
         UpdateUICosita();
         StartCoroutine(ActionCooldown());
     }
@@ -131,6 +143,7 @@ public class Cosita : LivingEntity
 
         foreach (Collider collider in objectsDetected)
         {
+            Debug.Log("COLISIONO CON:" +  collider.gameObject.name);
             if (collider.CompareTag(thingWanted))
             {
                 return collider.transform;
@@ -168,154 +181,241 @@ public class Cosita : LivingEntity
         // Dibuja una esfera en la posición del objeto (el radar de 15m)
         Gizmos.DrawSphere(transform.position, sensingRange);
     }
-
-    private void FindWater()
+    
+    private void FindResource(string resource)
     {
-        actionDoing = CreatureActions.LookingForWater;
-        debugUI.text = "Entrando numero: " + cont;
-
-        Transform thingWanted = SensingEnvironment("Water");
-
+        Transform thingWanted = SensingEnvironment(resource);
         if (thingWanted)
         {
+            actionDoing = resource.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
             target = thingWanted;
             targetUI.text = target.name.ToString();
-
 
         }
         else
         {
-            Walk();
-        }
-        
-    }
-    private void FindFood()
-    {
-        actionDoing = CreatureActions.LookingForFood;
-        Transform thingWanted = SensingEnvironment("Food");
-        if (thingWanted)
-        {
-            target = thingWanted;
-            targetUI.text = target.name.ToString();
+            actionDoing = CreatureActions.WalkingDesperately;
 
-
-        }
-        else
-        {
-            Walk();
         }
 
     }
+
+    //private void FindWater()
+    //{
+
+    //    Transform thingWanted = SensingEnvironment("Water");
+
+    //    if (thingWanted)
+    //    {
+    //        target = thingWanted;
+    //        targetUI.text = target.name.ToString();
+    //        actionDoing = CreatureActions.GoingToWater;
+
+
+    //    }
+    //    else
+    //    {
+    //        actionDoing = CreatureActions.WalkingDesperately;
+
+    //    }
+
+
+    //}
+    //private void FindFood()
+    //{
+    //    Transform thingWanted = SensingEnvironment("Food");
+    //    if (thingWanted)
+    //    {
+    //        target = thingWanted;
+    //        targetUI.text = target.name.ToString();
+    //        actionDoing = CreatureActions.GoingToFood;
+
+
+    //    }
+    //    else
+    //    {
+    //        actionDoing = CreatureActions.WalkingDesperately;
+
+    //    }
+
+
+    //}
     public Vector3 GetRandomDirection()
     {
-        //Elijo aleatoriamente una dirección en la x y z
-        int randomDir = Random.Range(0, 3); // 0: UP, 1: LEFT, 2: DOWN, 3: RIGHT:
-        switch (randomDir)
-        {
-            case 0: return new Vector3 (0,0,1);
-            case 1: return new Vector3 (-1,0,0);
-            case 2: return new Vector3 (0,0,-1);
-            case 3: return new Vector3 (1,0,1);
-            default: return Vector3.zero;
+        // random direcction in XZ 
+        Vector3 randomDirection = new Vector3(
+            Random.Range(-1f, 1f), // X
+            0f,                     // Y = 0
+            Random.Range(-1f, 1f)  // Z
+        ).normalized; // Normaliza para que solo sea dirección
 
-        }
+        return randomDirection;
 
     }
-
-    public void Walk()
+    public void Act()
     {
-        hydrated = hydrated - 5;
-        sated = sated - 5;
-        cont++;
-
-        if (!target && ( actionDoing == CreatureActions.LookingForWater || actionDoing == CreatureActions.LookingForFood)) // I didnt see water in my range of view and im thirsty
+        switch(actionDoing)
         {
-            //choose one direction and go in the same direction until I see water or I die
-            if (desperateDirection == Vector3.zero)
-            {
-                desperateDirection = GetRandomDirection();
+            case CreatureActions.GoingToWater:
+                MoveToTarget(target);
+                break;
 
-            }
+            case CreatureActions.GoingToFood:
+                MoveToTarget(target);
+                break;
 
-            transform.position += desperateDirection * speed; // Moving the object multiplying the dir by the speed
+            case CreatureActions.WalkingDesperately:
+                if (desperateDirection == Vector3.zero)
+                {
+                    desperateDirection = GetRandomDirection();
 
+                }
+                transform.position += desperateDirection * speed; // Moving the object multiplying the dir by the speed
+                break;
 
-
+            case CreatureActions.Exploring:
+                Walk();
+                break;
         }
         
-        else if (!target)
-        {  // I only walk without direcction
-
-            desperateDirection = Vector3.zero; // Now I have a target and Im not desperate any more
-            actionDoing = CreatureActions.Exploring;
-
-            //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
-            //transform.position = transform.position + RandomTargetMov;
-
-            Vector3 direction = GetRandomDirection(); // Obtener la dirección aleatoria
-            transform.position += direction * speed; // Mover el objeto multiplicando la dirección por la velocidad
-        }
-
-        else if (target)  // I have a target 
-        {
-            Vector3 targetPositionIgnoringY = new Vector3 ( target.position.x, transform.position.y, target.position.z );
-            // Mover hacia el target
-            transform.position = Vector3.MoveTowards(transform.position, targetPositionIgnoringY, speed);
-
-            // Calcular la distancia en X y Z sin signo
-            //float distanceX = Mathf.Abs(transform.position.x - target.position.x);
-            //float distanceZ = Mathf.Abs(transform.position.z - target.position.z);
-
-            float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
-            Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
-
-            foreach (Collider collider in objectsDetected)
-            {
-                if (collider.CompareTag(target.gameObject.tag))
-                {
-                    if (target.gameObject.tag.Equals("Water"))
-                    {
-                        actionDoing = CreatureActions.Drinking;
-                        hydrated = 100;
-
-                    }
-                    else if (target.gameObject.tag.Equals("Food"))
-                    {
-                        actionDoing = CreatureActions.Eating;
-                        sated = 100;
-                    }
-
-                    target = null;
-                    break;
-                }
-            }
-
-
-            // Verificar si la distancia es menor o igual a 1 en ambos ejes
-            //if (distanceX <= 1f && distanceZ <= 1f)
-            //{
-            //    Debug.Log("BEBIENDO AGUA");
-               
-            //    hydrated = 100f;
-            //    target = null;
-            //    actionDoing = CreatureActions.Drinking;
-            //    UpdateUICosita();
-            //}
-            
-
-            //transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + speed);
-            // Calcula el valor 't' entre 0 y 1
-            //float t = Mathf.Clamp01(timeElapsed / duration);
-
-            // Interpola linealmente la posición del objeto hacia el objetivo
-            // transform.position = Vector3.Lerp(transform.position, target.position, t);
-            // interpolar paso a paso para que cosita vaya a su target;
-        }
-
-            
-
-       
-
-
     }
+    public void MoveToTarget(Transform target)
+    {
+        Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
+
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetPositionIgnoringY,
+            speed
+        );
+        //currentDirection = (targetPositionIgnoringY - transform.position).normalized;
+    }
+    public void Walk()
+    {
+        //I only walk without direcction
+        hydrated = hydrated - 5;
+        desperateDirection = Vector3.zero; //Im not desperate any more
+
+        //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
+        //transform.position = transform.position + RandomTargetMov;
+
+        Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
+        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
+
+        transform.position += smoothedDir * speed; // Mover el objeto multiplicando la dirección por la velocidad
+
+        currentDirection = smoothedDir;
+    }
+
+
+
+
+
+    //public void Walk()
+    //{
+    //    hydrated = hydrated - 5;
+    //    sated = sated - 5;
+    //    cont++;
+
+    //    if (!target && ( actionDoing == CreatureActions.LookingForWater || actionDoing == CreatureActions.LookingForFood)) // I didnt see water in my range of view and im thirsty
+    //    {
+    //        //choose one direction and go in the same direction until I see water or I die
+    //        if (desperateDirection == Vector3.zero)
+    //        {
+    //            desperateDirection = GetRandomDirection();
+
+    //        }
+
+    //        transform.position += desperateDirection * speed; // Moving the object multiplying the dir by the speed
+
+
+
+    //    }
+
+    //    else if (!target)
+    //    {  // I only walk without direcction
+
+    //        desperateDirection = Vector3.zero; // Now I have a target and Im not desperate any more
+    //        actionDoing = CreatureActions.Exploring;
+
+    //        //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
+    //        //transform.position = transform.position + RandomTargetMov;
+
+    //        Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
+    //        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
+
+
+    //        transform.position += smoothedDir * speed * Time.deltaTime; // Mover el objeto multiplicando la dirección por la velocidad
+
+    //        currentDirection = smoothedDir;
+    //    }
+
+    //    else if (target)  // I have a target 
+    //    {
+    //        Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
+
+    //        transform.position = Vector3.MoveTowards(
+    //            transform.position,
+    //            targetPositionIgnoringY,
+    //            speed
+    //        );
+    //        currentDirection = (targetPositionIgnoringY - transform.position).normalized;
+
+
+    //        // Calcular la distancia en X y Z sin signo
+    //        //float distanceX = Mathf.Abs(transform.position.x - target.position.x);
+    //        //float distanceZ = Mathf.Abs(transform.position.z - target.position.z);
+
+    //        float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
+    //        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
+
+    //        foreach (Collider collider in objectsDetected)
+    //        {
+    //            if (collider.CompareTag(target.gameObject.tag))
+    //            {
+    //                if (target.gameObject.tag.Equals("Water"))
+    //                {
+    //                    actionDoing = CreatureActions.Drinking;
+    //                    hydrated = 100;
+
+    //                }
+    //                else if (target.gameObject.tag.Equals("Food"))
+    //                {
+    //                    actionDoing = CreatureActions.Eating;
+    //                    sated = 100;
+    //                }
+
+    //                target = null;
+    //                break;
+    //            }
+    //        }
+
+
+    //        // Verificar si la distancia es menor o igual a 1 en ambos ejes
+    //        //if (distanceX <= 1f && distanceZ <= 1f)
+    //        //{
+    //        //    Debug.Log("BEBIENDO AGUA");
+
+    //        //    hydrated = 100f;
+    //        //    target = null;
+    //        //    actionDoing = CreatureActions.Drinking;
+    //        //    UpdateUICosita();
+    //        //}
+
+
+    //        //transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + speed);
+    //        // Calcula el valor 't' entre 0 y 1
+    //        //float t = Mathf.Clamp01(timeElapsed / duration);
+
+    //        // Interpola linealmente la posición del objeto hacia el objetivo
+    //        // transform.position = Vector3.Lerp(transform.position, target.position, t);
+    //        // interpolar paso a paso para que cosita vaya a su target;
+    //    }
+
+
+
+
+
+
+    //}
 }

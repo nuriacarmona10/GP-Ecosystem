@@ -365,9 +365,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialPopulations:
-  - prefab: {fileID: 3084675470560522, guid: 22ca785036bb16a4487b4920bf742c0e, type: 3}
+  - prefab: {fileID: 8720032386853048131, guid: 882ed979d5535444c90c0f744b6256a9, type: 3}
     count: 20
-  - prefab: {fileID: 289972011261474896, guid: 76b9486c7111d944c83c91e83f367c00, type: 3}
+  - prefab: {fileID: 2852198393238843829, guid: 32213c499de690a4f938a43a951ae583, type: 3}
     count: 20
 --- !u!4 &324440449
 Transform:
