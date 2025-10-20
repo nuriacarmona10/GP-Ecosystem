@@ -36,7 +36,6 @@ public class Cosita : LivingEntity
 
     //DEBUG
     public TMP_Text debugUI;
-    int cont = 0;
 
 
     private float coolDownActionChoice= 5.0f;  // The cooldown duration (e.g., 5 second)
@@ -119,11 +118,11 @@ public class Cosita : LivingEntity
 
         if (hydrated < 50f )
         {
-            FindResource("Water");
+            SearchForResource("Water");
         }
         else if ( sated < 50f )
         {
-            FindResource("Food");
+            SearchForResource("Food");
 
         }
         else
@@ -182,7 +181,7 @@ public class Cosita : LivingEntity
         Gizmos.DrawSphere(transform.position, sensingRange);
     }
     
-    private void FindResource(string resource)
+    private void SearchForResource(string resource)
     {
         Transform thingWanted = SensingEnvironment(resource);
         if (thingWanted)
@@ -257,10 +256,25 @@ public class Cosita : LivingEntity
         switch(actionDoing)
         {
             case CreatureActions.GoingToWater:
-                MoveToTarget(target);
+                if (AreNear(target, 1.5f))
+                {
+                    actionDoing = CreatureActions.Drinking;
+                    hydrated = 100;
+                }
+                else
+                {
+                    MoveToTarget(target);
+
+                }
                 break;
 
             case CreatureActions.GoingToFood:
+
+                if(AreNear(target, 2f))
+                {
+                    actionDoing = CreatureActions.Eating;
+                    sated = 100;
+                }
                 MoveToTarget(target);
                 break;
 
@@ -277,7 +291,7 @@ public class Cosita : LivingEntity
                 Walk();
                 break;
         }
-        
+
     }
     public void MoveToTarget(Transform target)
     {
@@ -288,12 +302,45 @@ public class Cosita : LivingEntity
             targetPositionIgnoringY,
             speed
         );
+
+
         //currentDirection = (targetPositionIgnoringY - transform.position).normalized;
     }
+
+    public bool AreNear(Transform objectToCheck, float range)
+    {
+
+        return System.Math.Abs(this.transform.position.x - objectToCheck.position.x) <= range && System.Math.Abs(this.transform.position.z - objectToCheck.position.z) <= range;
+        //float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
+        //Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
+
+        //foreach (Collider collider in objectsDetected)
+        //{
+        //    if (collider.CompareTag(target.gameObject.tag))
+        //    {
+        //        if (target.gameObject.tag.Equals("Water"))
+        //        {
+        //            actionDoing = CreatureActions.Drinking;
+        //            hydrated = 100;
+
+        //        }
+        //        else if (target.gameObject.tag.Equals("Food"))
+        //        {
+        //            actionDoing = CreatureActions.Eating;
+        //            sated = 100;
+        //        }
+
+        //        target = null;
+        //        break;
+        //    }
+        //}
+    }
+
     public void Walk()
     {
         //I only walk without direcction
-        hydrated = hydrated - 5;
+        hydrated -= 5;
+        sated -= 5;
         desperateDirection = Vector3.zero; //Im not desperate any more
 
         //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
