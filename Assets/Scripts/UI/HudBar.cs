@@ -13,7 +13,7 @@ public class HUDBar : MonoBehaviour
         slider.value = maxHealthValue;
     }
 
-    public void SetSliderValue(int value)
+    public void SetSliderValue(float value)
     {
         slider.value = value;
     }

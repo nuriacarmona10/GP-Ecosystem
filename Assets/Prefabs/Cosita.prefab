@@ -1885,8 +1885,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 100
   speed: 1
-  hydrated: 100
-  sated: 50
+  hydrated: 50
+  sated: 100
   sensingRange: 5
   target: {fileID: 0}
   hungerBar: {fileID: 1606512000943933081}

@@ -11,8 +11,8 @@ public class Cosita : LivingEntity
     // Propiedades básicas
     [SerializeField] public float health;     // Salud de la cosita
     [SerializeField] public float speed;
-    [SerializeField] public int hydrated;
-    [SerializeField] public int sated;
+    [SerializeField] public float hydrated;
+    [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
 
     public Transform target;
@@ -42,6 +42,8 @@ public class Cosita : LivingEntity
     private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
     private bool isDoingAction = false;
 
+    private int timeToDeathByHungerAndThirsty = 1; // cada 10 segundos pierde un 1 de 100 que es su barra entera
+
 
 
     public override void Init()
@@ -65,9 +67,9 @@ public class Cosita : LivingEntity
     // Update is called once per frame
     void Update()
     {
-        // Increase hunger and thirst over time
-        //sated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
-        //hydrated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
+        //Increase hunger and thirst over time
+        sated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
+        hydrated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
 
         //Esto no deberia ir aquí
         //goalUI.text = actionDoing.ToString();
@@ -88,6 +90,11 @@ public class Cosita : LivingEntity
             ChooseNextAction();
 
 
+        }
+        else
+        {
+            Act();
+            UpdateUICosita();
         }
         if (hydrated < 0)
         {
@@ -131,9 +138,8 @@ public class Cosita : LivingEntity
         }
         
 
-        Act();
-        UpdateUICosita();
-        StartCoroutine(ActionCooldown());
+        
+        //StartCoroutine(ActionCooldown());
     }
 
     public Transform SensingEnvironment(string thingWanted) // I pass a string with the name of the tag to the method
@@ -260,6 +266,7 @@ public class Cosita : LivingEntity
                 {
                     actionDoing = CreatureActions.Drinking;
                     hydrated = 100;
+                    StartCoroutine(ActionCooldown());
                 }
                 else
                 {
@@ -274,6 +281,7 @@ public class Cosita : LivingEntity
                 {
                     actionDoing = CreatureActions.Eating;
                     sated = 100;
+                    StartCoroutine(ActionCooldown());
                 }
                 MoveToTarget(target);
                 break;
@@ -284,7 +292,8 @@ public class Cosita : LivingEntity
                     desperateDirection = GetRandomDirection();
 
                 }
-                transform.position += desperateDirection * speed; // Moving the object multiplying the dir by the speed
+                transform.Translate(desperateDirection * Time.deltaTime * speed);
+                ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
                 break;
 
             case CreatureActions.Exploring:
@@ -300,7 +309,7 @@ public class Cosita : LivingEntity
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetPositionIgnoringY,
-            speed
+            speed * Time.deltaTime
         );
 
 
@@ -339,21 +348,16 @@ public class Cosita : LivingEntity
     public void Walk()
     {
         //I only walk without direcction
-        hydrated -= 5;
-        sated -= 5;
-        desperateDirection = Vector3.zero; //Im not desperate any more
+       
+        //desperateDirection = Vector3.zero; //Im not desperate any more
 
-        //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
-        //transform.position = transform.position + RandomTargetMov;
+        //Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
+        //Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
 
-        Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
-        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
+        //transform.position += smoothedDir * speed; // Mover el objeto multiplicando la dirección por la velocidad
+        //currentDirection = smoothedDir;
 
-        //Vector3 futurePosition = transform.position + (smoothedDir * speed);
-
-        transform.position += smoothedDir * speed; // Mover el objeto multiplicando la dirección por la velocidad
-
-        currentDirection = smoothedDir;
+        transform.Translate(Vector2.right * Time.deltaTime * speed);
     }
 
     public bool WillHaveGround (Vector3 futurePosition)
