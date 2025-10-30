@@ -349,12 +349,24 @@ public class Cosita : LivingEntity
         Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
         Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
 
+        //Vector3 futurePosition = transform.position + (smoothedDir * speed);
+
         transform.position += smoothedDir * speed; // Mover el objeto multiplicando la dirección por la velocidad
 
         currentDirection = smoothedDir;
     }
 
-
+    public bool WillHaveGround (Vector3 futurePosition)
+    {
+        if(Physics.Raycast(futurePosition, Vector3.down, out RaycastHit hit, 2f))
+        {
+            if( hit.collider.CompareTag("Ground") )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 
