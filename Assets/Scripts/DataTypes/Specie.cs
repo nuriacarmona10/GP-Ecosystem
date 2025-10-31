@@ -6,7 +6,7 @@ public enum Specie
 {
    
         Cosita = (1 << 0),
-        Tree = (1 << 1)
+        Tree = (1 << 1),
 
 
 }

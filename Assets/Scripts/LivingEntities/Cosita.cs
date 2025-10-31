@@ -19,6 +19,8 @@ public class Cosita : LivingEntity
     Vector3 desperateDirection;
     Vector3 currentDirection;
     BoxCollider boxColliderCosita;
+    private float walkingTimer;              // Contador de tiempo
+  
 
 
 
@@ -42,7 +44,7 @@ public class Cosita : LivingEntity
     private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
     private bool isDoingAction = false;
 
-    private int timeToDeathByHungerAndThirsty = 1; // cada 10 segundos pierde un 1 de 100 que es su barra entera
+    private int timeToDeathByHungerAndThirsty = 1; 
 
 
 
@@ -68,7 +70,7 @@ public class Cosita : LivingEntity
     void Update()
     {
         //Increase hunger and thirst over time
-        sated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
+        sated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty; // ahora mismo tarda 100 segundos en morir
         hydrated -= Time.deltaTime * 1 / timeToDeathByHungerAndThirsty;
 
         //Esto no deberia ir aquí
@@ -96,7 +98,7 @@ public class Cosita : LivingEntity
             Act();
             UpdateUICosita();
         }
-        if (hydrated < 0)
+        if (hydrated <= 0 || sated <= 0)
         {
             Die();
             Debug.Log("Me MORIII");
@@ -349,15 +351,27 @@ public class Cosita : LivingEntity
     {
         //I only walk without direcction
        
-        //desperateDirection = Vector3.zero; //Im not desperate any more
+        desperateDirection = Vector3.zero; //Im not desperate any more
 
-        //Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
-        //Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
+        transform.Translate(currentDirection * Time.deltaTime * speed);
+        Debug.Log("Ando a una velocidad de:" + currentDirection * Time.deltaTime * speed);
+        //transform.position += smoothedDir * speed;
+        // Aumenta el contador de tiempo
+        walkingTimer += Time.deltaTime;
 
-        //transform.position += smoothedDir * speed; // Mover el objeto multiplicando la dirección por la velocidad
-        //currentDirection = smoothedDir;
+        // Si ya pasaron 3 segundos, cambia la dirección
+        if (walkingTimer >= 3f)
+        {
+            Vector3 randomdirection = GetRandomDirection();
+            Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
+            currentDirection = smoothedDir;
+            walkingTimer = 0f; // Reinicia el contador
+            isDoingAction = false;
+        }
 
-        transform.Translate(Vector2.right * Time.deltaTime * speed);
+
+       
+
     }
 
     public bool WillHaveGround (Vector3 futurePosition)
