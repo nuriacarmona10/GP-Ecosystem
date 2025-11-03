@@ -17,7 +17,7 @@ public class Cosita : LivingEntity
 
     public Transform target;
     Vector3 desperateDirection;
-    Vector3 currentDirection;
+    public Vector3 currentDirection;
     BoxCollider boxColliderCosita;
     private float walkingTimer;              // Contador de tiempo
   
@@ -123,7 +123,9 @@ public class Cosita : LivingEntity
     public void ChooseNextAction()
     {
         // Inicia la acción
-        isDoingAction = true;
+        isDoingAction = true; // maybe remove this
+
+        //if busy then return 
 
         if (hydrated < 50f )
         {
