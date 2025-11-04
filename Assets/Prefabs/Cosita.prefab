@@ -1884,18 +1884,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53d3a3ac5a887be4cb3e0b58ffe2518e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  specie: 0
   health: 100
   speed: 1
   hydrated: 100
-  sated: 50
+  sated: 100
   sensingRange: 5
   target: {fileID: 0}
+  currentDirection: {x: 0, y: 0, z: 0}
+  currentRandomPoint: {x: 0, y: 0, z: 0}
+  currentRandomPositionGoing: {fileID: 0}
   hungerBar: {fileID: 1606512000943933081}
   waterBar: {fileID: 774664476415201110}
   goalUI: {fileID: 502617135391566566}
   targetUI: {fileID: 9102685232148382381}
   ThirstyUI: {fileID: 3230290288284241169}
   debugUI: {fileID: 9176328779681569118}
+  agent: {fileID: 1666855126760284348}
 --- !u!65 &4000022370161271325
 BoxCollider:
   m_ObjectHideFlags: 0

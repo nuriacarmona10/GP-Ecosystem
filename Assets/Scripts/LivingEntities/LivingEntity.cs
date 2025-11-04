@@ -1,11 +1,16 @@
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class LivingEntity : MonoBehaviour
 {
-    protected Specie specie;
-    
+    public Specie specie;
+
+    public delegate void DeathAction(LivingEntity entity);
+
+    public static event DeathAction OnEntityDied;
+
     public virtual void Init()
     {
 
@@ -13,6 +18,7 @@ public class LivingEntity : MonoBehaviour
 
     protected virtual void Die ()
     {
+        OnEntityDied?.Invoke(this);
         Destroy(gameObject);
     }
 }

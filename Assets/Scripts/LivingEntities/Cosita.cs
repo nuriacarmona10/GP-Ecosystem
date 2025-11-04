@@ -4,11 +4,11 @@ using Unity.VisualScripting;
 using UnityEngine;
 using TMPro;
 using UnityEditor.Experimental.GraphView;
+using UnityEngine.AI;
 
 public class Cosita : LivingEntity
 {
     
-    // Propiedades básicas
     [SerializeField] public float health;     // Salud de la cosita
     [SerializeField] public float speed;
     [SerializeField] public float hydrated;
@@ -17,7 +17,10 @@ public class Cosita : LivingEntity
 
     public Transform target;
     Vector3 desperateDirection;
-    public Vector3 currentDirection;
+    public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
+    public Vector3 currentRandomPoint;
+    public Transform currentRandomPositionGoing;
+
     BoxCollider boxColliderCosita;
     private float walkingTimer;              // Contador de tiempo
   
@@ -44,7 +47,8 @@ public class Cosita : LivingEntity
     private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
     private bool isDoingAction = false;
 
-    private int timeToDeathByHungerAndThirsty = 1; 
+    private int timeToDeathByHungerAndThirsty = 1;
+    public NavMeshAgent agent;
 
 
 
@@ -57,8 +61,8 @@ public class Cosita : LivingEntity
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
         currentDirection = transform.forward;
+        currentRandomPoint = Vector3.zero;
         UpdateUICosita();
-       
 
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         //ChooseNextAction();
@@ -301,7 +305,11 @@ public class Cosita : LivingEntity
                 break;
 
             case CreatureActions.Exploring:
-                Walk();
+                if (agent.remainingDistance < 0.5f)
+                {
+                    agent.ResetPath();
+                }
+                MoveToRandomPoint();
                 break;
         }
 
@@ -319,6 +327,30 @@ public class Cosita : LivingEntity
 
         //currentDirection = (targetPositionIgnoringY - transform.position).normalized;
     }
+    public void MoveToRandomPoint()
+    {
+        
+        if(agent.hasPath)
+        {
+            currentRandomPoint = GetRandomPoint();
+        }
+        
+         agent.SetDestination(currentRandomPoint);
+        
+
+       
+    }
+    public Vector3 GetRandomPoint()
+    {
+        Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange;
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(randomPoint, out hit, 2f, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+        return Vector3.zero;
+    }
+    
 
     public bool AreNear(Transform objectToCheck, float range)
     {
