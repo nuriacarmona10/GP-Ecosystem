@@ -18,7 +18,7 @@ public class Cosita : LivingEntity
     public Transform target;
     Vector3 desperateDirection;
     public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
-    public Vector3 currentRandomPoint;
+    //public Vector3 currentRandomPoint;
     public Transform currentRandomPositionGoing;
 
     BoxCollider boxColliderCosita;
@@ -45,7 +45,7 @@ public class Cosita : LivingEntity
 
     private float coolDownActionChoice= 5.0f;  // The cooldown duration (e.g., 5 second)
     private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
-    private bool isDoingAction = false;
+    private bool isBusy = false;
 
     private int timeToDeathByHungerAndThirsty = 1;
     public NavMeshAgent agent;
@@ -61,7 +61,7 @@ public class Cosita : LivingEntity
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
         currentDirection = transform.forward;
-        currentRandomPoint = Vector3.zero;
+        //currentRandomPoint = GetRandomPoint();
         UpdateUICosita();
 
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
@@ -91,17 +91,14 @@ public class Cosita : LivingEntity
 
         // Verificar si el cooldown se ha terminado
         //debugUI.text = "Haciendo algo: " + isDoingAction.ToString();
-        if (!isDoingAction)
+        if (!isBusy)
         {
             ChooseNextAction();
-
-
-        }
-        else
-        {
             Act();
             UpdateUICosita();
         }
+           
+        
         if (hydrated <= 0 || sated <= 0)
         {
             Die();
@@ -111,14 +108,14 @@ public class Cosita : LivingEntity
     }
 
   
-    IEnumerator ActionCooldown()
+    IEnumerator ActionCooldown(float time)
     {
         
                 
                 // Espera 5 segundos antes de permitir la siguiente acción
 
-                yield return new WaitForSeconds(5f);
-                isDoingAction = false;
+                yield return new WaitForSeconds(time);
+                isBusy = false;
        
             
 
@@ -127,13 +124,16 @@ public class Cosita : LivingEntity
     public void ChooseNextAction()
     {
         // Inicia la acción
-        isDoingAction = true; // maybe remove this
 
         //if busy then return 
 
         if (hydrated < 50f )
         {
             SearchForResource("Water");
+            if (target == null && sated < 50f)
+            {
+                SearchForResource("Food");
+            }
         }
         else if ( sated < 50f )
         {
@@ -142,6 +142,7 @@ public class Cosita : LivingEntity
         }
         else
         {
+            target = null;
             actionDoing = CreatureActions.Exploring;
         }
         
@@ -149,14 +150,13 @@ public class Cosita : LivingEntity
         
         //StartCoroutine(ActionCooldown());
     }
-
+  
     public Transform SensingEnvironment(string thingWanted) // I pass a string with the name of the tag to the method
     {
         Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
 
         foreach (Collider collider in objectsDetected)
         {
-            Debug.Log("COLISIONO CON:" +  collider.gameObject.name);
             if (collider.CompareTag(thingWanted))
             {
                 return collider.transform;
@@ -207,52 +207,14 @@ public class Cosita : LivingEntity
         }
         else
         {
+            target = null;
             actionDoing = CreatureActions.WalkingDesperately;
 
         }
 
     }
 
-    //private void FindWater()
-    //{
-
-    //    Transform thingWanted = SensingEnvironment("Water");
-
-    //    if (thingWanted)
-    //    {
-    //        target = thingWanted;
-    //        targetUI.text = target.name.ToString();
-    //        actionDoing = CreatureActions.GoingToWater;
-
-
-    //    }
-    //    else
-    //    {
-    //        actionDoing = CreatureActions.WalkingDesperately;
-
-    //    }
-
-
-    //}
-    //private void FindFood()
-    //{
-    //    Transform thingWanted = SensingEnvironment("Food");
-    //    if (thingWanted)
-    //    {
-    //        target = thingWanted;
-    //        targetUI.text = target.name.ToString();
-    //        actionDoing = CreatureActions.GoingToFood;
-
-
-    //    }
-    //    else
-    //    {
-    //        actionDoing = CreatureActions.WalkingDesperately;
-
-    //    }
-
-
-    //}
+   
     public Vector3 GetRandomDirection()
     {
         // random direcction in XZ 
@@ -272,9 +234,12 @@ public class Cosita : LivingEntity
             case CreatureActions.GoingToWater:
                 if (AreNear(target, 1.5f))
                 {
+                    isBusy = true;
                     actionDoing = CreatureActions.Drinking;
                     hydrated = 100;
-                    StartCoroutine(ActionCooldown());
+                    target = null;
+                    agent.ResetPath();
+                    StartCoroutine(ActionCooldown(3f));
                 }
                 else
                 {
@@ -287,70 +252,134 @@ public class Cosita : LivingEntity
 
                 if(AreNear(target, 2f))
                 {
+                    isBusy = true;
                     actionDoing = CreatureActions.Eating;
                     sated = 100;
-                    StartCoroutine(ActionCooldown());
+                    target = null;
+                    agent.ResetPath();
+                    StartCoroutine(ActionCooldown(3f));
                 }
                 MoveToTarget(target);
                 break;
 
             case CreatureActions.WalkingDesperately:
-                if (desperateDirection == Vector3.zero)
+                if (agent.remainingDistance < 0.5f)
                 {
-                    desperateDirection = GetRandomDirection();
-
+                    agent.ResetPath();
+                    //currentRandomPoint = Vector3.zero;
                 }
-                transform.Translate(desperateDirection * Time.deltaTime * speed);
-                ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
+                MoveToRandomPoint();
+                //agent.Move(desperateDirection * Time.deltaTime * speed);
+                //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
                 break;
 
             case CreatureActions.Exploring:
                 if (agent.remainingDistance < 0.5f)
                 {
                     agent.ResetPath();
+                    //currentRandomPoint = Vector3.zero;
                 }
                 MoveToRandomPoint();
+                //ChooseNextAction();
                 break;
         }
 
     }
     public void MoveToTarget(Transform target)
     {
-        Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
+        //Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
+        //Vector3 dir = (targetPositionIgnoringY - transform.position).normalized;
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            targetPositionIgnoringY,
-            speed * Time.deltaTime
-        );
+        if (agent.hasPath)
+            return;
+
+        agent.SetDestination(target.position);
+        //agent.Move(dir * speed * Time.deltaTime);
+
+
+        //transform.position = Vector3.MoveTowards(
+        //    transform.position,
+        //    targetPositionIgnoringY,
+        //    speed * Time.deltaTime
+        //);
 
 
         //currentDirection = (targetPositionIgnoringY - transform.position).normalized;
     }
+    public void MoveDesesperatly()
+    {
+        if (agent.hasPath)
+            return;
+
+        Vector3 dir = Vector3.forward;
+        agent.SetDestination(dir);
+
+    }
     public void MoveToRandomPoint()
     {
-        
-        if(agent.hasPath)
-        {
-            currentRandomPoint = GetRandomPoint();
-        }
-        
-         agent.SetDestination(currentRandomPoint);
-        
+        Vector3 randomPoint;
 
-       
-    }
-    public Vector3 GetRandomPoint()
-    {
-        Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange;
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomPoint, out hit, 2f, NavMesh.AllAreas))
+        if (agent.hasPath)
+            return;
+
+        if(GetRandomPoint(out randomPoint))
         {
-            return hit.position;
+        
+            agent.SetDestination(randomPoint);
+
         }
-        return Vector3.zero;
+
+        
+       
+
+        //     walkingTimer += Time.deltaTime;
+
+        //// Si ya pasaron 3 segundos, cambia la dirección
+        //if (walkingTimer >= 3f)
+        //{
+        //    Vector3 randomdirection = GetRandomDirection();
+        //    Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
+        //    currentDirection = smoothedDir;
+        //    walkingTimer = 0f; // Reinicia el contador
+        //}
+
+
+
+
+
+
     }
-    
+    //public Vector3 GetRandomPoint()
+    //{
+    //    for (int i = 0; i < 10; i++) // hasta 10 intentos
+    //    {
+    //        Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange;
+    //        randomPoint.y = transform.position.y;
+
+    //        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+    //        {
+    //            return hit.position;
+    //        }
+    //    }
+
+    //    // Si no encontró ninguno, devuélvelo a su posición actual (no al (0,0,0))
+    //    return transform.position;
+    //}
+    bool GetRandomPoint(out Vector3 result)
+    {
+        for (int i = 0; i < 30; i++)
+        {
+            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange*2;
+            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            {
+                result = hit.position;
+                return true;
+            }
+        }
+        result = Vector3.zero;
+        return false;
+    }
+
 
     public bool AreNear(Transform objectToCheck, float range)
     {
@@ -400,7 +429,6 @@ public class Cosita : LivingEntity
             Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
             currentDirection = smoothedDir;
             walkingTimer = 0f; // Reinicia el contador
-            isDoingAction = false;
         }
 
 
@@ -408,125 +436,9 @@ public class Cosita : LivingEntity
 
     }
 
-    public bool WillHaveGround (Vector3 futurePosition)
-    {
-        if(Physics.Raycast(futurePosition, Vector3.down, out RaycastHit hit, 2f))
-        {
-            if( hit.collider.CompareTag("Ground") )
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+   
 
 
 
-    //public void Walk()
-    //{
-    //    hydrated = hydrated - 5;
-    //    sated = sated - 5;
-    //    cont++;
-
-    //    if (!target && ( actionDoing == CreatureActions.LookingForWater || actionDoing == CreatureActions.LookingForFood)) // I didnt see water in my range of view and im thirsty
-    //    {
-    //        //choose one direction and go in the same direction until I see water or I die
-    //        if (desperateDirection == Vector3.zero)
-    //        {
-    //            desperateDirection = GetRandomDirection();
-
-    //        }
-
-    //        transform.position += desperateDirection * speed; // Moving the object multiplying the dir by the speed
-
-
-
-    //    }
-
-    //    else if (!target)
-    //    {  // I only walk without direcction
-
-    //        desperateDirection = Vector3.zero; // Now I have a target and Im not desperate any more
-    //        actionDoing = CreatureActions.Exploring;
-
-    //        //Vector3 RandomTargetMov = new Vector3(Random.Range(-2f, 2f), 0.25f, Random.Range(2f, 2f));
-    //        //transform.position = transform.position + RandomTargetMov;
-
-    //        Vector3 randomdirection = GetRandomDirection(); // Obtener la dirección aleatoria
-    //        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.3f);
-
-
-    //        transform.position += smoothedDir * speed * Time.deltaTime; // Mover el objeto multiplicando la dirección por la velocidad
-
-    //        currentDirection = smoothedDir;
-    //    }
-
-    //    else if (target)  // I have a target 
-    //    {
-    //        Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
-
-    //        transform.position = Vector3.MoveTowards(
-    //            transform.position,
-    //            targetPositionIgnoringY,
-    //            speed
-    //        );
-    //        currentDirection = (targetPositionIgnoringY - transform.position).normalized;
-
-
-    //        // Calcular la distancia en X y Z sin signo
-    //        //float distanceX = Mathf.Abs(transform.position.x - target.position.x);
-    //        //float distanceZ = Mathf.Abs(transform.position.z - target.position.z);
-
-    //        float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
-    //        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
-
-    //        foreach (Collider collider in objectsDetected)
-    //        {
-    //            if (collider.CompareTag(target.gameObject.tag))
-    //            {
-    //                if (target.gameObject.tag.Equals("Water"))
-    //                {
-    //                    actionDoing = CreatureActions.Drinking;
-    //                    hydrated = 100;
-
-    //                }
-    //                else if (target.gameObject.tag.Equals("Food"))
-    //                {
-    //                    actionDoing = CreatureActions.Eating;
-    //                    sated = 100;
-    //                }
-
-    //                target = null;
-    //                break;
-    //            }
-    //        }
-
-
-    //        // Verificar si la distancia es menor o igual a 1 en ambos ejes
-    //        //if (distanceX <= 1f && distanceZ <= 1f)
-    //        //{
-    //        //    Debug.Log("BEBIENDO AGUA");
-
-    //        //    hydrated = 100f;
-    //        //    target = null;
-    //        //    actionDoing = CreatureActions.Drinking;
-    //        //    UpdateUICosita();
-    //        //}
-
-
-    //        //transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + speed);
-    //        // Calcula el valor 't' entre 0 y 1
-    //        //float t = Mathf.Clamp01(timeElapsed / duration);
-
-    //        // Interpola linealmente la posición del objeto hacia el objetivo
-    //        // transform.position = Vector3.Lerp(transform.position, target.position, t);
-    //        // interpolar paso a paso para que cosita vaya a su target;
-    //    }
-
-
-
-
-
-
-    //}
+   
 }
