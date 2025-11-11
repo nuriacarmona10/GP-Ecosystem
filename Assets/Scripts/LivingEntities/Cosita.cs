@@ -212,7 +212,7 @@ public class Cosita : LivingEntity
             SearchForResource("Food");
 
         }
-        else if (hasPassedReproCooldown && reproductionHunger > 50f )
+        else if (hasPassedReproCooldown && reproductionHunger > 65f )
         {
             agent.ResetPath(); // quiero que se quede parado
             actionDoing = CreatureActions.Cloning;
@@ -374,7 +374,8 @@ public class Cosita : LivingEntity
         if (agent.hasPath)
             return;
 
-        agent.SetDestination(target.position);
+        if (target)
+            agent.SetDestination(target.position);
         //agent.Move(dir * speed * Time.deltaTime);
 
 
