@@ -7,9 +7,7 @@ public class LivingEntity : MonoBehaviour
 {
     public Specie specie;
 
-    public delegate void DeathAction(LivingEntity entity);
-
-    public static event DeathAction OnEntityDied;
+    
 
     public virtual void Init()
     {
@@ -18,7 +16,7 @@ public class LivingEntity : MonoBehaviour
 
     protected virtual void Die ()
     {
-        OnEntityDied?.Invoke(this);
+        EcosystemManager.Instance.HandleEntityDeath(this);
         Destroy(gameObject);
     }
 }

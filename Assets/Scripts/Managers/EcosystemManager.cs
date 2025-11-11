@@ -27,57 +27,49 @@ public class EcosystemManager : MonoBehaviour
         public int count;            // Cantidad de entidades vivas en la población
     }
 
-    [HideInInspector] public static List<Cosita> cositas;
-    [HideInInspector] public static List<Tree> trees;
+
+    public static EcosystemManager Instance;
+    [HideInInspector] public List<Cosita> cositas;
+    [HideInInspector] public List<Tree> trees;
+    [HideInInspector] public GameObject cositaPrefab;
+    [HideInInspector] public GameObject treePrefab;
 
 
-
-    private void OnEnable()
+    private void Awake()
     {
-        LivingEntity.OnEntityDied += HandleEntityDeath;
+        Instance = this;
     }
+    
 
-    private void OnDisable()
-    {
-        LivingEntity.OnEntityDied -= HandleEntityDeath;
-    }
-
-    public void HandleEntityDeath(LivingEntity entity)
-    {
-        if (cositas.Contains(entity))
-        {
-            cositas.Remove((Cosita)entity);
-        }
-        else if (trees.Contains(entity))
-        {
-            trees.Remove((Tree)entity);
-        }
-        UpdateHud();
-    }
+   
     // Start is called before the first frame update
     void Start()
     {
         trees = new List<Tree>();
         cositas = new List<Cosita>();
 
-        List<LivingEntity> aux = new List<LivingEntity>();
 
         if (initialPopulations.Length > 0)
         {
-            foreach (var population in initialPopulations)
+            foreach (var popu in initialPopulations)
             {
+                
                
-                for (int i = 0; i < population.count; i++)
+                for (int i = 0; i < popu.count; i++)
                 {
                     Vector3 randomSpawn = new Vector3(Random.Range(-24.5f, 24.5f), 0.25f, Random.Range(-24.5f, 24.5f));
-                    GameObject entity = Instantiate(population.prefab, randomSpawn, Quaternion.identity);
+                    GameObject entity = Instantiate(popu.prefab, randomSpawn, Quaternion.identity);
                     LivingEntity livingEntity = entity.GetComponent<LivingEntity>();
                     if (livingEntity is Cosita cos)
                     {
+                        cos.Init();
+                        cositaPrefab = popu.prefab; // Esto no esta bien aqui 
                         cositas.Add(cos);
                     }
                     else if (livingEntity is Tree tree)
                     {
+                        tree.Init();
+                        treePrefab = popu.prefab; // Esto no esta bien aqui 
                         trees.Add(tree);
                     }
                 }
@@ -94,6 +86,35 @@ public class EcosystemManager : MonoBehaviour
             Debug.Log("There is no population initialized");
         }
         
+    }
+    public void HandleEntityBorn(Transform transform)
+    {
+        GameObject entity = Instantiate(cositaPrefab, transform.position, Quaternion.identity);
+        LivingEntity livingEntity = entity.GetComponent<LivingEntity>();
+        if (livingEntity is Cosita cos)
+        {
+            cos.Init();
+            cositas.Add(cos);
+        }
+        else if (livingEntity is Tree tree)
+        {   
+            tree.Init();
+            trees.Add(tree);
+        }
+        UpdateHud();   
+
+    }
+    public void HandleEntityDeath(LivingEntity entity)
+    {
+        if (cositas.Contains(entity))
+        {
+            cositas.Remove((Cosita)entity);
+        }
+        else if (trees.Contains(entity))
+        {
+            trees.Remove((Tree)entity);
+        }
+        UpdateHud();
     }
 
     public void UpdateHud()

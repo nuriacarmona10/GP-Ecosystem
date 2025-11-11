@@ -14,29 +14,35 @@ public class Cosita : LivingEntity
     [SerializeField] public float hydrated;
     [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
+    [SerializeField] public float reproductionHunger;
+    [SerializeField] public float reproductionHungerRate;
+    [SerializeField] public bool  hasPassedReproCooldown;
+
 
     public Transform target;
-    Vector3 desperateDirection;
-    public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
+    public Vector3 desperateDirection;
+
+    //public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
     //public Vector3 currentRandomPoint;
-    public Transform currentRandomPositionGoing;
+   // public Transform currentRandomPositionGoing;
 
     BoxCollider boxColliderCosita;
-    private float walkingTimer;              // Contador de tiempo
-  
+    // private float walkingTimer;              // Contador de tiempo
 
+    //Reproduction
+   
 
 
     ///UI
-
+    [Header("UI")]
     public HUDBar hungerBar;
     public HUDBar waterBar;
+    public HUDBar reproductionBar;
     public TMP_Text goalUI;
-
-
     public TMP_Text targetUI;
     public TMP_Text ThirstyUI;
     //public TMP_Text satedUI;
+
     CreatureActions actionDoing = CreatureActions.Idle;
 
     //DEBUG
@@ -60,12 +66,26 @@ public class Cosita : LivingEntity
         boxColliderCosita = GetComponent<BoxCollider>();
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
-        currentDirection = transform.forward;
+        reproductionBar.SetMaxValue(100);
+        //reproductionHunger = 0f;
+
         //currentRandomPoint = GetRandomPoint();
         UpdateUICosita();
 
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         //ChooseNextAction();
+
+
+
+    }
+    public void Reproduce()
+    {
+        Debug.Log("Me reproduzco");
+        hasPassedReproCooldown = false;
+        isBusy = true;
+        StartCoroutine(ReproductionCooldown(3f));
+       
+
 
 
 
@@ -96,30 +116,82 @@ public class Cosita : LivingEntity
             ChooseNextAction();
             Act();
             UpdateUICosita();
+
         }
-           
-        
+
+
         if (hydrated <= 0 || sated <= 0)
         {
             Die();
             Debug.Log("Me MORIII");
         }
-        
+
+        UpdateReproductionHunger();
+
+
+
+       
+
+
     }
 
-  
-    IEnumerator ActionCooldown(float time)
+    public void UpdateReproductionHunger()
     {
-        
-                
-                // Espera 5 segundos antes de permitir la siguiente acción
+        float delta = reproductionHungerRate * Time.deltaTime;
 
-                yield return new WaitForSeconds(time);
-                isBusy = false;
-       
-            
+        if (hydrated > 50f && sated > 50f)
+        {
+            reproductionHunger = Mathf.Min(reproductionHunger + delta, 100f);
+        }
+        else if (hydrated < 50f && sated < 50f)
+        {
+            reproductionHunger = Mathf.Max(reproductionHunger - delta, 0f);
+        }
 
-           
+    }
+
+    IEnumerator EatingCooldown(float time)
+    {
+
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+        isBusy = true;
+        yield return new WaitForSeconds(time);
+        sated = 100;
+        target = null;
+        isBusy = false;
+
+
+    }
+    IEnumerator DrinkingCooldown(float time)
+    {
+
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+        isBusy = true;
+        yield return new WaitForSeconds(time);
+        hydrated = 100;
+        target = null;
+        isBusy = false;
+
+
+    }
+
+    IEnumerator ReproductionCooldown(float time)
+    {
+
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+
+        yield return new WaitForSeconds(time);
+        hasPassedReproCooldown = true;
+        isBusy = false;
+        EcosystemManager.Instance.HandleEntityBorn(this.transform);
+        reproductionHunger = reproductionHunger / 2;
+
+
+
+
     }
     public void ChooseNextAction()
     {
@@ -139,6 +211,11 @@ public class Cosita : LivingEntity
         {
             SearchForResource("Food");
 
+        }
+        else if (hasPassedReproCooldown && reproductionHunger > 50f )
+        {
+            agent.ResetPath(); // quiero que se quede parado
+            actionDoing = CreatureActions.Cloning;
         }
         else
         {
@@ -174,6 +251,7 @@ public class Cosita : LivingEntity
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         hungerBar.SetSliderValue(sated);
         waterBar.SetSliderValue(hydrated);
+        reproductionBar.SetSliderValue(reproductionHunger);
 
         if (target)
         {
@@ -234,12 +312,12 @@ public class Cosita : LivingEntity
             case CreatureActions.GoingToWater:
                 if (AreNear(target, 1.5f))
                 {
-                    isBusy = true;
                     actionDoing = CreatureActions.Drinking;
-                    hydrated = 100;
-                    target = null;
                     agent.ResetPath();
-                    StartCoroutine(ActionCooldown(3f));
+
+                    StartCoroutine(DrinkingCooldown(3f));
+
+                  
                 }
                 else
                 {
@@ -252,12 +330,13 @@ public class Cosita : LivingEntity
 
                 if(AreNear(target, 2f))
                 {
-                    isBusy = true;
                     actionDoing = CreatureActions.Eating;
+                    agent.ResetPath();
+
+                    StartCoroutine(EatingCooldown(3f));
+
                     sated = 100;
                     target = null;
-                    agent.ResetPath();
-                    StartCoroutine(ActionCooldown(3f));
                 }
                 MoveToTarget(target);
                 break;
@@ -272,7 +351,9 @@ public class Cosita : LivingEntity
                 //agent.Move(desperateDirection * Time.deltaTime * speed);
                 //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
                 break;
-
+            case CreatureActions.Cloning:
+                Reproduce();
+                break;
             case CreatureActions.Exploring:
                 if (agent.remainingDistance < 0.5f)
                 {
@@ -410,31 +491,31 @@ public class Cosita : LivingEntity
         //}
     }
 
-    public void Walk()
-    {
-        //I only walk without direcction
+    //public void Walk()
+    //{
+    //    //I only walk without direcction
        
-        desperateDirection = Vector3.zero; //Im not desperate any more
+    //    desperateDirection = Vector3.zero; //Im not desperate any more
 
-        transform.Translate(currentDirection * Time.deltaTime * speed);
-        Debug.Log("Ando a una velocidad de:" + currentDirection * Time.deltaTime * speed);
-        //transform.position += smoothedDir * speed;
-        // Aumenta el contador de tiempo
-        walkingTimer += Time.deltaTime;
+    //    transform.Translate(currentDirection * Time.deltaTime * speed);
+    //    Debug.Log("Ando a una velocidad de:" + currentDirection * Time.deltaTime * speed);
+    //    //transform.position += smoothedDir * speed;
+    //    // Aumenta el contador de tiempo
+    //    walkingTimer += Time.deltaTime;
 
-        // Si ya pasaron 3 segundos, cambia la dirección
-        if (walkingTimer >= 3f)
-        {
-            Vector3 randomdirection = GetRandomDirection();
-            Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
-            currentDirection = smoothedDir;
-            walkingTimer = 0f; // Reinicia el contador
-        }
+    //    // Si ya pasaron 3 segundos, cambia la dirección
+    //    if (walkingTimer >= 3f)
+    //    {
+    //        Vector3 randomdirection = GetRandomDirection();
+    //        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
+    //        currentDirection = smoothedDir;
+    //        walkingTimer = 0f; // Reinicia el contador
+    //    }
 
 
        
 
-    }
+    //}
 
    
 

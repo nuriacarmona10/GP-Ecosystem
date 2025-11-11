@@ -8,6 +8,7 @@ public enum CreatureActions
     Exploring,
     Eating,
     Drinking,
+    Cloning,
     GoingToFood,
     GoingToWater,
     WalkingDesperately
