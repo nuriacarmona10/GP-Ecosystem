@@ -15,12 +15,15 @@ public class Cosita : LivingEntity
     [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
     [SerializeField] public float reproductionHunger;
+    [SerializeField] public int  inventorySlots;
     [SerializeField] public float reproductionHungerRate;
     [SerializeField] public bool  hasPassedReproCooldown;
 
 
-    public Transform target;
-    public Vector3 desperateDirection;
+    private GameObject target;
+    private IResource resource;
+    private Vector3 desperateDirection;
+    private Genes genes;
 
     //public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
     //public Vector3 currentRandomPoint;
@@ -67,6 +70,7 @@ public class Cosita : LivingEntity
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
         reproductionBar.SetMaxValue(100);
+        genes = new Genes(reproductionHunger, inventorySlots);
         //reproductionHunger = 0f;
 
         //currentRandomPoint = GetRandomPoint();
@@ -150,32 +154,7 @@ public class Cosita : LivingEntity
 
     }
 
-    IEnumerator EatingCooldown(float time)
-    {
-
-
-        // Espera 5 segundos antes de permitir la siguiente acción
-        isBusy = true;
-        yield return new WaitForSeconds(time);
-        sated = 100;
-        target = null;
-        isBusy = false;
-
-
-    }
-    IEnumerator DrinkingCooldown(float time)
-    {
-
-
-        // Espera 5 segundos antes de permitir la siguiente acción
-        isBusy = true;
-        yield return new WaitForSeconds(time);
-        hydrated = 100;
-        target = null;
-        isBusy = false;
-
-
-    }
+    
 
     IEnumerator ReproductionCooldown(float time)
     {
@@ -202,7 +181,7 @@ public class Cosita : LivingEntity
         if (hydrated < 50f )
         {
             SearchForResource("Water");
-            if (target == null && sated < 50f)
+            if (resource == null && sated < 50f)
             {
                 SearchForResource("Food");
             }
@@ -228,15 +207,16 @@ public class Cosita : LivingEntity
         //StartCoroutine(ActionCooldown());
     }
   
-    public Transform SensingEnvironment(string thingWanted) // I pass a string with the name of the tag to the method
+    public IResource SensingResources(string thingWanted) // I pass a string with the name of the thing I want
     {
         Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
 
         foreach (Collider collider in objectsDetected)
         {
-            if (collider.CompareTag(thingWanted))
+            IResource resource = collider.GetComponent<IResource>();
+            if (resource != null && resource.ResourceType == thingWanted )
             {
-                return collider.transform;
+                return resource;
 
             }
         }
@@ -273,19 +253,19 @@ public class Cosita : LivingEntity
         Gizmos.DrawSphere(transform.position, sensingRange);
     }
     
-    private void SearchForResource(string resource)
+    private void SearchForResource(string resourceName)
     {
-        Transform thingWanted = SensingEnvironment(resource);
-        if (thingWanted)
+        IResource resourceFound = SensingResources(resourceName);
+        if (resourceFound != null)
         {
-            actionDoing = resource.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
-            target = thingWanted;
-            targetUI.text = target.name.ToString();
+            actionDoing = resourceName.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
+            resource = resourceFound;
+            //targetUI.text = target.name.ToString();
 
         }
         else
         {
-            target = null;
+            resource = null;
             actionDoing = CreatureActions.WalkingDesperately;
 
         }
@@ -310,35 +290,46 @@ public class Cosita : LivingEntity
         switch(actionDoing)
         {
             case CreatureActions.GoingToWater:
-                if (AreNear(target, 1.5f))
+                if (AreNear(resource.gameObjecto, 1.5f))
                 {
+                    
                     actionDoing = CreatureActions.Drinking;
                     agent.ResetPath();
+                    isBusy = true;
 
-                    StartCoroutine(DrinkingCooldown(3f));
+                    StartCoroutine(DrinkingCooldown(resource.timeToConsumeIt));
 
                   
                 }
                 else
                 {
-                    MoveToTarget(target);
+                    MoveToTarget(resource.gameObjecto);
 
                 }
                 break;
 
             case CreatureActions.GoingToFood:
 
-                if(AreNear(target, 2f))
+                if(AreNear(resource.gameObjecto, 2f))
                 {
+
                     actionDoing = CreatureActions.Eating;
                     agent.ResetPath();
+                    isBusy = true;
+                    sated += resource.satiety;
+                    if (sated > 100)
+                        sated = 100;
+                    StartCoroutine(EatingCooldown(resource.timeToConsumeIt));
+                    resource.Consume();
+                    resource = null;
 
-                    StartCoroutine(EatingCooldown(3f));
 
-                    sated = 100;
-                    target = null;
                 }
-                MoveToTarget(target);
+                else
+                {
+                    MoveToTarget(resource.gameObjecto);
+
+                }
                 break;
 
             case CreatureActions.WalkingDesperately:
@@ -366,7 +357,36 @@ public class Cosita : LivingEntity
         }
 
     }
-    public void MoveToTarget(Transform target)
+    IEnumerator EatingCooldown(float time)
+    {
+
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+        yield return new WaitForSeconds(time);
+       
+
+        isBusy = false;
+
+
+    }
+    IEnumerator DrinkingCooldown(float time)
+    {
+
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+        isBusy = true;
+        yield return new WaitForSeconds(time);
+        
+        hydrated += resource.hydration;
+        if (hydrated > 100)
+            hydrated = 100;
+        resource = null;
+        isBusy = false;
+
+
+    }
+
+    public void MoveToTarget(GameObject target)
     {
         //Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
         //Vector3 dir = (targetPositionIgnoringY - transform.position).normalized;
@@ -375,7 +395,7 @@ public class Cosita : LivingEntity
             return;
 
         if (target)
-            agent.SetDestination(target.position);
+            agent.SetDestination(target.transform.position);
         //agent.Move(dir * speed * Time.deltaTime);
 
 
@@ -463,10 +483,10 @@ public class Cosita : LivingEntity
     }
 
 
-    public bool AreNear(Transform objectToCheck, float range)
+    public bool AreNear(GameObject objectToCheck, float range)
     {
 
-        return System.Math.Abs(this.transform.position.x - objectToCheck.position.x) <= range && System.Math.Abs(this.transform.position.z - objectToCheck.position.z) <= range;
+        return System.Math.Abs(this.transform.position.x - objectToCheck.transform.position.x) <= range && System.Math.Abs(this.transform.position.z - objectToCheck.transform.position.z) <= range;
         //float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
         //Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
 
