@@ -65,6 +65,7 @@ public class EcosystemManager : MonoBehaviour
                         cos.Init();
                         cositaPrefab = popu.prefab; // Esto no esta bien aqui 
                         cositas.Add(cos);
+
                     }
                     else if (livingEntity is Tree tree)
                     {
@@ -87,13 +88,14 @@ public class EcosystemManager : MonoBehaviour
         }
         
     }
-    public void HandleEntityBorn(Transform transform)
+    public void HandleEntityBorn(Cosita mother)
     {
-        GameObject entity = Instantiate(cositaPrefab, transform.position, Quaternion.identity);
+        GameObject entity = Instantiate(cositaPrefab, mother.transform.position, Quaternion.identity);
         LivingEntity livingEntity = entity.GetComponent<LivingEntity>();
         if (livingEntity is Cosita cos)
         {
-            cos.Init();
+            cos.Init(mother);
+
             cositas.Add(cos);
         }
         else if (livingEntity is Tree tree)

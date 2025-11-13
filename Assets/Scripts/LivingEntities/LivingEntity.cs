@@ -9,7 +9,7 @@ public class LivingEntity : MonoBehaviour
 
     
 
-    public virtual void Init()
+    public virtual void Init(LivingEntity mother = null)
     {
 
     }

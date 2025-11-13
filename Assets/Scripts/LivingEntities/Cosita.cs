@@ -1,10 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEngine;
+using System.Security.Cryptography;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 using UnityEngine.AI;
+using static UnityEditor.Experimental.GraphView.Port;
+using static UnityEditor.PlayerSettings;
 
 public class Cosita : LivingEntity
 {
@@ -15,21 +18,24 @@ public class Cosita : LivingEntity
     [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
     [SerializeField] public float reproductionHunger;
-    [SerializeField] public int  inventorySlots;
     [SerializeField] public float reproductionHungerRate;
-    [SerializeField] public bool  hasPassedReproCooldown;
+    [SerializeField] public bool hasPassedReproCooldown;
+    [SerializeField] public Genes genes;
+
 
 
     private GameObject target;
     private IResource resource;
+
+
+    public List<IResource> inventoryList;
     private Vector3 desperateDirection;
-    private Genes genes;
 
     //public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
     //public Vector3 currentRandomPoint;
    // public Transform currentRandomPositionGoing;
 
-    BoxCollider boxColliderCosita;
+    //BoxCollider boxColliderCosita;
     // private float walkingTimer;              // Contador de tiempo
 
     //Reproduction
@@ -44,6 +50,9 @@ public class Cosita : LivingEntity
     public TMP_Text goalUI;
     public TMP_Text targetUI;
     public TMP_Text ThirstyUI;
+    public GameObject inventorySlotUI;
+    public GameObject SlotPrefab;
+    public GameObject appleSlotPrefab;
     //public TMP_Text satedUI;
 
     CreatureActions actionDoing = CreatureActions.Idle;
@@ -61,16 +70,36 @@ public class Cosita : LivingEntity
 
 
 
-    public override void Init()
+    public override void Init(LivingEntity mother = null)
     {
-        //Debug.Log("INIT COSITA");
+        if (mother != null)
+        {
+            Cosita cositaMom = mother as Cosita;
+            genes = new Genes(cositaMom.genes.inventorySlots); // I'm passing down same genes as mother
+
+
+        }
+        else
+        {
+            genes = Genes.RandomGenes();
+        }
+            //Debug.Log("INIT COSITA");
         specie = Specie.Cosita;
         target = null;
-        boxColliderCosita = GetComponent<BoxCollider>();
+        //boxColliderCosita = GetComponent<BoxCollider>();
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
         reproductionBar.SetMaxValue(100);
-        genes = new Genes(reproductionHunger, inventorySlots);
+
+       
+
+        AddInventorySlots();
+
+
+
+        //genes = new Genes(0, 0); // I will replace them in the next line;
+        //genes = genes.RandomGenes();
+
         //reproductionHunger = 0f;
 
         //currentRandomPoint = GetRandomPoint();
@@ -123,6 +152,7 @@ public class Cosita : LivingEntity
 
         }
 
+       
 
         if (hydrated <= 0 || sated <= 0)
         {
@@ -163,10 +193,11 @@ public class Cosita : LivingEntity
         // Espera 5 segundos antes de permitir la siguiente acción
 
         yield return new WaitForSeconds(time);
+        EcosystemManager.Instance.HandleEntityBorn(this);
+        reproductionHunger = reproductionHunger / 2;
         hasPassedReproCooldown = true;
         isBusy = false;
-        EcosystemManager.Instance.HandleEntityBorn(this.transform);
-        reproductionHunger = reproductionHunger / 2;
+        
 
 
 
@@ -181,17 +212,27 @@ public class Cosita : LivingEntity
         if (hydrated < 50f )
         {
             SearchForResource("Water");
-            if (resource == null && sated < 50f)
+            if (resource == null && sated < 70f  && inventoryList.Count < genes.inventorySlots)
             {
                 SearchForResource("Food");
             }
         }
-        else if ( sated < 50f )
+        else if ( sated < 70f && inventoryList.Count >= genes.inventorySlots )
         {
-            SearchForResource("Food");
+            if (sated < 50 && inventoryList.Count > 0)
+            {
+                Debug.Log("Quiero Comer");
+                actionDoing = CreatureActions.Eating;
+            }
+            else
+            {
+                SearchForResource("Food");
+
+            }
 
         }
-        else if (hasPassedReproCooldown && reproductionHunger > 65f )
+        
+        else if (hasPassedReproCooldown && reproductionHunger > 65f)
         {
             agent.ResetPath(); // quiero que se quede parado
             actionDoing = CreatureActions.Cloning;
@@ -244,6 +285,17 @@ public class Cosita : LivingEntity
         }
 
     }
+    public void AddInventorySlots()
+    {
+        inventoryList = new List<IResource>();
+        inventoryList.Capacity = genes.inventorySlots;
+
+        for (int i = 0; i<genes.inventorySlots; i++) {
+
+            Instantiate(SlotPrefab, inventorySlotUI.transform);
+
+        }
+    }
     void OnDrawGizmos()
     {
         // Configura el color del radar (por ejemplo, semi-transparente y rojo)
@@ -259,7 +311,17 @@ public class Cosita : LivingEntity
         if (resourceFound != null)
         {
             actionDoing = resourceName.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
-            resource = resourceFound;
+            if(resourceFound as Apple)
+            {
+                actionDoing = CreatureActions.GoingToFood;
+                resource = resourceFound;
+            }
+            else if( resourceFound as Water) 
+            {
+                actionDoing = CreatureActions.GoingToWater;
+                resource = resourceFound;
+
+            }
             //targetUI.text = target.name.ToString();
 
         }
@@ -296,7 +358,6 @@ public class Cosita : LivingEntity
                     actionDoing = CreatureActions.Drinking;
                     agent.ResetPath();
                     isBusy = true;
-
                     StartCoroutine(DrinkingCooldown(resource.timeToConsumeIt));
 
                   
@@ -312,16 +373,13 @@ public class Cosita : LivingEntity
 
                 if(AreNear(resource.gameObjecto, 2f))
                 {
-
-                    actionDoing = CreatureActions.Eating;
-                    agent.ResetPath();
-                    isBusy = true;
-                    sated += resource.satiety;
-                    if (sated > 100)
-                        sated = 100;
-                    StartCoroutine(EatingCooldown(resource.timeToConsumeIt));
+                    AddResourceToInventory(resource);
                     resource.Consume();
+                    isBusy = true;
+                    StartCoroutine(EatingCooldown(resource.timeToConsumeIt));
                     resource = null;
+                    agent.ResetPath();
+
 
 
                 }
@@ -330,6 +388,43 @@ public class Cosita : LivingEntity
                     MoveToTarget(resource.gameObjecto);
 
                 }
+                break;
+
+            case CreatureActions.Eating:
+                
+                    if (inventoryList.Count>0) { 
+                       
+                        Debug.Log("Lo he hecho");
+                        Apple apple = inventoryList[0] as Apple;
+
+                        sated += apple.satiety;
+                        if (sated > 100)
+                            sated = 100;
+
+                        isBusy = true;
+                        StartCoroutine(EatingCooldown(apple.timeToConsumeIt));
+                        //apple.Consume();
+                        Debug.Log("Quito la manzanita de mi inventario porque me la comi");
+                        inventoryList.Remove(apple);
+
+                    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
+                    Debug.Log("Soy el hijo" + LastChild.name);
+
+                    if (LastChild != null)
+                    {
+                        //LastChild.gameObject.SetActive(false);
+                        Destroy(LastChild.gameObject);
+                        Debug.Log("He destruido a appleSlot");
+                        break;
+
+
+                    }
+                }
+
+                
+               
+                
+               
                 break;
 
             case CreatureActions.WalkingDesperately:
@@ -356,6 +451,27 @@ public class Cosita : LivingEntity
                 break;
         }
 
+    }
+    public void AddResourceToInventory(IResource res)
+    {
+        if (res as Apple)
+        {
+            inventoryList.Add(res);
+            foreach (Transform slot in inventorySlotUI.transform)
+            {
+                // Verificar si el slot no tiene hijos
+                if (slot.childCount == 0)
+                {
+                    // Instanciar el prefab de la manzana en este slot vacío
+                    Instantiate(appleSlotPrefab, slot);
+
+                    // Si deseas agregar una imagen o un sprite a la manzana instanciada, puedes hacerlo así:
+                    // appleSlotPrefab.GetComponent<Image>().sprite = appleSprite; // Asigna el sprite de la manzana si es necesario
+
+                    break; // Terminar el ciclo ya que hemos encontrado un slot vacío
+                }
+            }
+        }
     }
     IEnumerator EatingCooldown(float time)
     {

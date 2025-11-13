@@ -4,19 +4,18 @@ using UnityEngine;
 
 public class Genes
 {
-    public float reproductionHunger;
     public int inventorySlots;
+    
 
-    public Genes(float reproductionHunger, int inventorySlots )
+    public Genes( int inventorySlots )
     {
-        this.reproductionHunger = reproductionHunger;
         this.inventorySlots = inventorySlots;
     }
-    public Genes RandomGenes()
+    public static Genes RandomGenes()
     {
-        float randomReproductionHunger = Random.Range( 0, 100 );
-        int randomInventorySlots = Random.Range( 0, 6 );
+        float randomReproductionHunger = Random.Range( 0, 50 );
+        int randomInventorySlots = Random.Range( 1, 4 );
 
-        return new Genes(reproductionHunger, randomInventorySlots);
+        return new Genes(randomInventorySlots);
     }
 }

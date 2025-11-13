@@ -454,8 +454,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cositasCountText: {fileID: 1786268912}
   cositasInitializedCountText: {fileID: 759133255}
-  treesCountText: {fileID: 0}
-  treesInitializedCountText: {fileID: 0}
+  treesCountText: {fileID: 1051680270}
+  treesInitializedCountText: {fileID: 1956510974}
   initialPopulations:
   - prefab: {fileID: 2852198393238843829, guid: 32213c499de690a4f938a43a951ae583, type: 3}
     count: 20

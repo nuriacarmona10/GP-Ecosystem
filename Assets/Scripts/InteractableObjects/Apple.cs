@@ -17,6 +17,7 @@ public class Apple : MonoBehaviour, IResource
     {
     }
 
+    
     // Update is called once per frame
     public void Consume()
     {
