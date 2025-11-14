@@ -163,7 +163,7 @@ public class Cosita : LivingEntity
         UpdateReproductionHunger();
 
 
-
+        
        
 
 
@@ -177,7 +177,7 @@ public class Cosita : LivingEntity
         {
             reproductionHunger = Mathf.Min(reproductionHunger + delta, 100f);
         }
-        else if (hydrated < 50f && sated < 50f)
+        else if (hydrated < 50f || sated < 50f)
         {
             reproductionHunger = Mathf.Max(reproductionHunger - delta, 0f);
         }
@@ -212,27 +212,50 @@ public class Cosita : LivingEntity
         if (hydrated < 50f )
         {
             SearchForResource("Water");
-            if (resource == null && sated < 70f  && inventoryList.Count < genes.inventorySlots)
+            if (resource == null && sated < 70f) //Preguntar esto a Claus, 
             {
-                SearchForResource("Food");
+
+                if (sated < 50 && inventoryList.Count > 0)
+                {
+                    Debug.Log("Quiero Comer");
+                    actionDoing = CreatureActions.Eating;
+                }
+                else if (inventoryList.Count == genes.inventorySlots) // if cosita has all its inventory slots full of food , it doesnt need to look for more food
+                {
+                    actionDoing = CreatureActions.Exploring;
+
+                }
+                else {
+
+                    SearchForResource("Food");
+
+                }
+
             }
         }
-        else if ( sated < 70f && inventoryList.Count >= genes.inventorySlots )
+        else if ( sated < 60f )   
         {
             if (sated < 50 && inventoryList.Count > 0)
             {
                 Debug.Log("Quiero Comer");
                 actionDoing = CreatureActions.Eating;
             }
+            else if(inventoryList.Count == genes.inventorySlots) // if cosita has all its inventory slots full of food , it doesnt need to look for more food
+            {
+
+                actionDoing = CreatureActions.Exploring;
+
+            }
             else
             {
                 SearchForResource("Food");
-
             }
 
         }
         
-        else if (hasPassedReproCooldown && reproductionHunger > 65f)
+
+
+        else if (hasPassedReproCooldown && reproductionHunger > 55f)
         {
             agent.ResetPath(); // quiero que se quede parado
             actionDoing = CreatureActions.Cloning;
@@ -273,6 +296,11 @@ public class Cosita : LivingEntity
         hungerBar.SetSliderValue(sated);
         waterBar.SetSliderValue(hydrated);
         reproductionBar.SetSliderValue(reproductionHunger);
+
+
+
+        debugUI.text = inventoryList.Count.ToString();
+
 
         if (target)
         {
@@ -328,7 +356,7 @@ public class Cosita : LivingEntity
         else
         {
             resource = null;
-            actionDoing = CreatureActions.WalkingDesperately;
+            actionDoing = CreatureActions.Exploring; // aqui iba walking desesperatly
 
         }
 
@@ -407,18 +435,32 @@ public class Cosita : LivingEntity
                         Debug.Log("Quito la manzanita de mi inventario porque me la comi");
                         inventoryList.Remove(apple);
 
-                    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
-                    Debug.Log("Soy el hijo" + LastChild.name);
+                        Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
+                        debugUI.text = inventorySlotUI.transform.childCount.ToString();
 
-                    if (LastChild != null)
-                    {
-                        //LastChild.gameObject.SetActive(false);
-                        Destroy(LastChild.gameObject);
-                        Debug.Log("He destruido a appleSlot");
-                        break;
+                        for (int i = inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
+                        {
+                            Transform child = inventorySlotUI.transform.GetChild(i);
+
+                            // Verifica si el hijo tiene hijos
+                            if (child.childCount > 0)
+                            {
+                                Destroy(child.GetChild(0).gameObject);
+                                break;
+                            }
+                        }
+                        //    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
+                        // Debug.Log("Soy el hijo" + LastChild.name);
+
+                        //if (LastChild != null)
+                        //{
+                        //    //LastChild.gameObject.SetActive(false);
+                        //    Destroy(LastChild.gameObject);
+                        //    Debug.Log("He destruido a appleSlot");
+                        //    break;
 
 
-                    }
+                        //}
                 }
 
                 
