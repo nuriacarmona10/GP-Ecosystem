@@ -13,7 +13,7 @@ public class Genes
     }
     public static Genes RandomGenes()
     {
-        float randomReproductionHunger = Random.Range( 0, 50 );
+        //float randomReproductionHunger = Random.Range( 0, 50 );
         int randomInventorySlots = Random.Range( 1, 4 );
 
         return new Genes(randomInventorySlots);

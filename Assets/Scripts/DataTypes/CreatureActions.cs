@@ -11,6 +11,7 @@ public enum CreatureActions
     Dying,
     Cloning,
     GoingToFood,
+    AddingFoodToInventory,
     GoingToWater,
     WalkingDesperately
 

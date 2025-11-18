@@ -2571,6 +2571,7 @@ GameObject:
   - component: {fileID: 8191127640505183510}
   - component: {fileID: 4000022370161271325}
   - component: {fileID: 1666855126760284348}
+  - component: {fileID: 5916065292842235871}
   m_Layer: 0
   m_Name: Cosita
   m_TagString: Untagged
@@ -2616,6 +2617,8 @@ MonoBehaviour:
   reproductionHunger: 0
   reproductionHungerRate: 2
   hasPassedReproCooldown: 1
+  actionManager: {fileID: 5916065292842235871}
+  Agent: {fileID: 1666855126760284348}
   hungerBar: {fileID: 1606512000943933081}
   waterBar: {fileID: 774664476415201110}
   reproductionBar: {fileID: 7378403700617226441}
@@ -2626,7 +2629,7 @@ MonoBehaviour:
   SlotPrefab: {fileID: 5392053177579993705, guid: ea3561ed0918f1d42810504723d23d2e, type: 3}
   appleSlotPrefab: {fileID: 2427720007102517834, guid: 1b103cf2af018a04a807fe5eb12181f8, type: 3}
   debugUI: {fileID: 9176328779681569118}
-  agent: {fileID: 1666855126760284348}
+  isBusy: 0
 --- !u!65 &4000022370161271325
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2670,6 +2673,19 @@ NavMeshAgent:
   m_BaseOffset: 0.48
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &5916065292842235871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8720032386853048131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ae241e13370f8c40a81b1466fe39060, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cosita: {fileID: 8191127640505183510}
 --- !u!1 &9129115616870419667
 GameObject:
   m_ObjectHideFlags: 0

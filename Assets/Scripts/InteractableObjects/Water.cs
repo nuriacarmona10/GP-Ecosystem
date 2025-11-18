@@ -5,14 +5,15 @@ using UnityEngine;
 public class Water : MonoBehaviour, IResource
 {
     public string ResourceType => "Water";
-    public float hydration => 100f;
-    public float satiety => 0f;
+    public float Hydration => 100f;
+    public float Satiety => 0f;
+    public float InteractionDistance => 1.5f;
 
-    public GameObject gameObjecto => this.gameObject;
-    public float timeToConsumeIt => 3f;
+    public GameObject ResourceGameObject => this.gameObject;
+    public float TimeToConsumeIt => 3f;
 
 
-    public void Consume()
+    public void DestroyGameobject()
     {
         Debug.Log("Drinking Water");
         //Destroy(gameObject);

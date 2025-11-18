@@ -21,15 +21,18 @@ public class Cosita : LivingEntity
     [SerializeField] public float reproductionHungerRate;
     [SerializeField] public bool hasPassedReproCooldown;
     [SerializeField] public Genes genes;
+    [SerializeField] public ActionManager actionManager;
 
 
 
-    private GameObject target;
-    private IResource resource;
+    public IResource resourceTarget;
+    //public IResource resource;
 
 
     public List<IResource> inventoryList;
-    private Vector3 desperateDirection;
+    public NavMeshAgent Agent;
+
+    //private Vector3 desperateDirection;
 
     //public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
     //public Vector3 currentRandomPoint;
@@ -55,18 +58,16 @@ public class Cosita : LivingEntity
     public GameObject appleSlotPrefab;
     //public TMP_Text satedUI;
 
-    CreatureActions actionDoing = CreatureActions.Idle;
+    public CreatureActions actionDoing = CreatureActions.Idle;
 
     //DEBUG
     public TMP_Text debugUI;
 
 
-    private float coolDownActionChoice= 5.0f;  // The cooldown duration (e.g., 5 second)
-    private float currentCoolDownActionChoice = 0.0f;  // The current cooldown time left
-    private bool isBusy = false;
+  
+    public bool isBusy = false;
 
     private int timeToDeathByHungerAndThirsty = 1;
-    public NavMeshAgent agent;
 
 
 
@@ -75,7 +76,7 @@ public class Cosita : LivingEntity
         if (mother != null)
         {
             Cosita cositaMom = mother as Cosita;
-            genes = new Genes(cositaMom.genes.inventorySlots); // I'm passing down same genes as mother
+            genes = new Genes(cositaMom.genes.inventorySlots); // I'm passing down same genes as mother , pasar directamente gen
 
 
         }
@@ -85,7 +86,7 @@ public class Cosita : LivingEntity
         }
             //Debug.Log("INIT COSITA");
         specie = Specie.Cosita;
-        target = null;
+        resourceTarget = null;
         //boxColliderCosita = GetComponent<BoxCollider>();
         hungerBar.SetMaxValue(100);
         waterBar.SetMaxValue(100);
@@ -118,10 +119,6 @@ public class Cosita : LivingEntity
         isBusy = true;
         StartCoroutine(ReproductionCooldown(3f));
        
-
-
-
-
     }
     // Update is called once per frame
     void Update()
@@ -146,7 +143,7 @@ public class Cosita : LivingEntity
         //debugUI.text = "Haciendo algo: " + isDoingAction.ToString();
         if (!isBusy)
         {
-            ChooseNextAction();
+            SensingEnvironment();
             Act();
             UpdateUICosita();
 
@@ -203,7 +200,7 @@ public class Cosita : LivingEntity
 
 
     }
-    public void ChooseNextAction()
+    public void SensingEnvironment()
     {
         // Inicia la acción
 
@@ -212,44 +209,13 @@ public class Cosita : LivingEntity
         if (hydrated < 50f )
         {
             SearchForResource("Water");
-            if (resource == null && sated < 70f) //Preguntar esto a Claus, 
-            {
-
-                if (sated < 50 && inventoryList.Count > 0)
-                {
-                    Debug.Log("Quiero Comer");
-                    actionDoing = CreatureActions.Eating;
-                }
-                else if (inventoryList.Count == genes.inventorySlots) // if cosita has all its inventory slots full of food , it doesnt need to look for more food
-                {
-                    actionDoing = CreatureActions.Exploring;
-
-                }
-                else {
-
-                    SearchForResource("Food");
-
-                }
-
-            }
+            
         }
         else if ( sated < 60f )   
         {
-            if (sated < 50 && inventoryList.Count > 0)
-            {
-                Debug.Log("Quiero Comer");
-                actionDoing = CreatureActions.Eating;
-            }
-            else if(inventoryList.Count == genes.inventorySlots) // if cosita has all its inventory slots full of food , it doesnt need to look for more food
-            {
-
-                actionDoing = CreatureActions.Exploring;
-
-            }
-            else
-            {
-                SearchForResource("Food");
-            }
+            
+            SearchForResource("Food");
+            
 
         }
         
@@ -257,13 +223,13 @@ public class Cosita : LivingEntity
 
         else if (hasPassedReproCooldown && reproductionHunger > 55f)
         {
-            agent.ResetPath(); // quiero que se quede parado
-            actionDoing = CreatureActions.Cloning;
+            Agent.ResetPath(); // quiero que se quede parado
+            //actionDoing = CreatureActions.Cloning;
         }
         else
         {
-            target = null;
-            actionDoing = CreatureActions.Exploring;
+            //target = null;
+            //actionDoing = CreatureActions.Exploring;
         }
         
 
@@ -302,15 +268,15 @@ public class Cosita : LivingEntity
         debugUI.text = inventoryList.Count.ToString();
 
 
-        if (target)
-        {
-            targetUI.text = "Target: " + target.name;
-        }
-        else
-        {
-            targetUI.text = "Target: None";
+        //if (target)
+        //{
+        //    targetUI.text = "Target: " + target.name;
+        //}
+        //else
+        //{
+        //    targetUI.text = "Target: None";
 
-        }
+        //}
 
     }
     public void AddInventorySlots()
@@ -338,27 +304,22 @@ public class Cosita : LivingEntity
         IResource resourceFound = SensingResources(resourceName);
         if (resourceFound != null)
         {
-            actionDoing = resourceName.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
-            if(resourceFound as Apple)
-            {
-                actionDoing = CreatureActions.GoingToFood;
-                resource = resourceFound;
-            }
-            else if( resourceFound as Water) 
-            {
-                actionDoing = CreatureActions.GoingToWater;
-                resource = resourceFound;
+            //actionDoing = resourceName.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
+            
+                //actionDoing = CreatureActions.GoingToFood;
+            
+                //actionDoing = CreatureActions.GoingToWater;
+                resourceTarget = resourceFound;
 
-            }
-            //targetUI.text = target.name.ToString();
+            //resourceTargetUI.text = resourceTarget.name.ToString();
 
         }
-        else
-        {
-            resource = null;
-            actionDoing = CreatureActions.Exploring; // aqui iba walking desesperatly
+        //else
+        //{
+        //    resourceTarget = null; 
+        //    actionDoing = CreatureActions.Exploring; // aqui iba walking desesperatly
 
-        }
+        //}
 
     }
 
@@ -377,121 +338,122 @@ public class Cosita : LivingEntity
     }
     public void Act()
     {
-        switch(actionDoing)
-        {
-            case CreatureActions.GoingToWater:
-                if (AreNear(resource.gameObjecto, 1.5f))
-                {
+        actionManager.ExecuteAction();
+        //switch(actionDoing)
+        //{
+        //    case CreatureActions.GoingToWater:
+        //        if (AreNear(resourceTarget.ResourceGameObject, 1.5f))
+        //        {
                     
-                    actionDoing = CreatureActions.Drinking;
-                    agent.ResetPath();
-                    isBusy = true;
-                    StartCoroutine(DrinkingCooldown(resource.timeToConsumeIt));
+        //            actionDoing = CreatureActions.Drinking;
+        //            Agent.ResetPath();
+        //            isBusy = true;
+        //            StartCoroutine(DrinkingCooldown(resourceTarget.TimeToConsumeIt));
 
                   
-                }
-                else
-                {
-                    MoveToTarget(resource.gameObjecto);
+        //        }
+        //        else
+        //        {
+        //            MoveToTarget(resourceTarget.ResourceGameObject);
 
-                }
-                break;
+        //        }
+        //        break;
 
-            case CreatureActions.GoingToFood:
+        //    case CreatureActions.GoingToFood:
 
-                if(AreNear(resource.gameObjecto, 2f))
-                {
-                    AddResourceToInventory(resource);
-                    resource.Consume();
-                    isBusy = true;
-                    StartCoroutine(EatingCooldown(resource.timeToConsumeIt));
-                    resource = null;
-                    agent.ResetPath();
+        //        if(AreNear(resourceTarget.ResourceGameObject, 2f))
+        //        {
+        //            AddResourceToInventory(resourceTarget);
+        //            resourceTarget.Consume();
+        //            isBusy = true;
+        //            StartCoroutine(EatingCooldown(resourceTarget.TimeToConsumeIt));
+        //            resourceTarget = null;
+        //            Agent.ResetPath();
 
 
 
-                }
-                else
-                {
-                    MoveToTarget(resource.gameObjecto);
+        //        }
+        //        else
+        //        {
+        //            MoveToTarget(resourceTarget.ResourceGameObject);
 
-                }
-                break;
+        //        }
+        //        break;
 
-            case CreatureActions.Eating:
+        //    case CreatureActions.Eating:
                 
-                    if (inventoryList.Count>0) { 
+        //            if (inventoryList.Count>0) { 
                        
-                        Debug.Log("Lo he hecho");
-                        Apple apple = inventoryList[0] as Apple;
+        //                Debug.Log("Lo he hecho");
+        //                Apple apple = inventoryList[0] as Apple;
 
-                        sated += apple.satiety;
-                        if (sated > 100)
-                            sated = 100;
+        //                sated += apple.Satiety;
+        //                if (sated > 100)
+        //                    sated = 100;
 
-                        isBusy = true;
-                        StartCoroutine(EatingCooldown(apple.timeToConsumeIt));
-                        //apple.Consume();
-                        Debug.Log("Quito la manzanita de mi inventario porque me la comi");
-                        inventoryList.Remove(apple);
+        //                isBusy = true;
+        //                StartCoroutine(EatingCooldown(apple.TimeToConsumeIt));
+        //                //apple.Consume();
+        //                Debug.Log("Quito la manzanita de mi inventario porque me la comi");
+        //                inventoryList.Remove(apple);
 
-                        Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
-                        debugUI.text = inventorySlotUI.transform.childCount.ToString();
+        //                Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
+        //                debugUI.text = inventorySlotUI.transform.childCount.ToString();
 
-                        for (int i = inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
-                        {
-                            Transform child = inventorySlotUI.transform.GetChild(i);
+        //                for (int i = inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
+        //                {
+        //                    Transform child = inventorySlotUI.transform.GetChild(i);
 
-                            // Verifica si el hijo tiene hijos
-                            if (child.childCount > 0)
-                            {
-                                Destroy(child.GetChild(0).gameObject);
-                                break;
-                            }
-                        }
-                        //    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
-                        // Debug.Log("Soy el hijo" + LastChild.name);
+        //                    // Verifica si el hijo tiene hijos
+        //                    if (child.childCount > 0)
+        //                    {
+        //                        Destroy(child.GetChild(0).gameObject);
+        //                        break;
+        //                    }
+        //                }
+        //                //    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
+        //                // Debug.Log("Soy el hijo" + LastChild.name);
 
-                        //if (LastChild != null)
-                        //{
-                        //    //LastChild.gameObject.SetActive(false);
-                        //    Destroy(LastChild.gameObject);
-                        //    Debug.Log("He destruido a appleSlot");
-                        //    break;
+        //                //if (LastChild != null)
+        //                //{
+        //                //    //LastChild.gameObject.SetActive(false);
+        //                //    Destroy(LastChild.gameObject);
+        //                //    Debug.Log("He destruido a appleSlot");
+        //                //    break;
 
 
-                        //}
-                }
+        //                //}
+        //        }
 
                 
                
                 
                
-                break;
+        //        break;
 
-            case CreatureActions.WalkingDesperately:
-                if (agent.remainingDistance < 0.5f)
-                {
-                    agent.ResetPath();
-                    //currentRandomPoint = Vector3.zero;
-                }
-                MoveToRandomPoint();
-                //agent.Move(desperateDirection * Time.deltaTime * speed);
-                //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
-                break;
-            case CreatureActions.Cloning:
-                Reproduce();
-                break;
-            case CreatureActions.Exploring:
-                if (agent.remainingDistance < 0.5f)
-                {
-                    agent.ResetPath();
-                    //currentRandomPoint = Vector3.zero;
-                }
-                MoveToRandomPoint();
-                //ChooseNextAction();
-                break;
-        }
+        //    case CreatureActions.WalkingDesperately:
+        //        if (Agent.remainingDistance < 0.5f)
+        //        {
+        //            Agent.ResetPath();
+        //            //currentRandomPoint = Vector3.zero;
+        //        }
+        //        MoveToRandomPoint();
+        //        //Agent.Move(desperateDirection * Time.deltaTime * speed);
+        //        //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
+        //        break;
+        //    case CreatureActions.Cloning:
+        //        Reproduce();
+        //        break;
+        //    case CreatureActions.Exploring:
+        //        if (Agent.remainingDistance < 0.5f)
+        //        {
+        //            Agent.ResetPath();
+        //            //currentRandomPoint = Vector3.zero;
+        //        }
+        //        MoveToRandomPoint();
+        //        //ChooseNextAction();
+        //        break;
+        //}
 
     }
     public void AddResourceToInventory(IResource res)
@@ -515,7 +477,7 @@ public class Cosita : LivingEntity
             }
         }
     }
-    IEnumerator EatingCooldown(float time)
+    public IEnumerator EatingCooldown(float time)
     {
 
 
@@ -527,19 +489,22 @@ public class Cosita : LivingEntity
 
 
     }
-    IEnumerator DrinkingCooldown(float time)
+    public IEnumerator DrinkingCooldown(float time)
     {
 
 
         // Espera 5 segundos antes de permitir la siguiente acción
         isBusy = true;
-        yield return new WaitForSeconds(time);
-        
-        hydrated += resource.hydration;
+        hydrated += resourceTarget.Hydration;
         if (hydrated > 100)
             hydrated = 100;
-        resource = null;
+        resourceTarget = null;
+        yield return new WaitForSeconds(time);
         isBusy = false;
+
+
+
+
 
 
     }
@@ -549,12 +514,12 @@ public class Cosita : LivingEntity
         //Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
         //Vector3 dir = (targetPositionIgnoringY - transform.position).normalized;
 
-        if (agent.hasPath)
+        if (Agent.hasPath)
             return;
 
         if (target)
-            agent.SetDestination(target.transform.position);
-        //agent.Move(dir * speed * Time.deltaTime);
+            Agent.SetDestination(target.transform.position);
+        //Agent.Move(dir * speed * Time.deltaTime);
 
 
         //transform.position = Vector3.MoveTowards(
@@ -568,24 +533,24 @@ public class Cosita : LivingEntity
     }
     public void MoveDesesperatly()
     {
-        if (agent.hasPath)
+        if (Agent.hasPath)
             return;
 
         Vector3 dir = Vector3.forward;
-        agent.SetDestination(dir);
+        Agent.SetDestination(dir);
 
     }
     public void MoveToRandomPoint()
     {
         Vector3 randomPoint;
 
-        if (agent.hasPath)
+        if (Agent.hasPath)
             return;
 
         if(GetRandomPoint(out randomPoint))
         {
         
-            agent.SetDestination(randomPoint);
+            Agent.SetDestination(randomPoint);
 
         }
 

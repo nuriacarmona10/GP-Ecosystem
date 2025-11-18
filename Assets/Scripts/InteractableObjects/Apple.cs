@@ -6,10 +6,12 @@ public class Apple : MonoBehaviour, IResource
 {
     public float energy;
     public string ResourceType => "Food";
-    public float hydration => 100f;
-    public float satiety => 30f;
-    public GameObject gameObjecto => this.gameObject;
-    public float timeToConsumeIt => 3f;
+    public float Hydration => 100f;
+    public float Satiety => 30f;
+
+    public float InteractionDistance => 1.5f;
+    public GameObject ResourceGameObject => this.gameObject;
+    public float TimeToConsumeIt => 3f;
 
 
     // Start is called before the first frame update
@@ -19,7 +21,7 @@ public class Apple : MonoBehaviour, IResource
 
     
     // Update is called once per frame
-    public void Consume()
+    public void DestroyGameobject()
     {
         Debug.Log("Eating Apple");
         Destroy(this.gameObject);

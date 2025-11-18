@@ -5,14 +5,16 @@ using UnityEngine;
 public interface IResource
 {
     string ResourceType { get; }
-    float hydration { get; }
-    float satiety { get; }
+    float Hydration { get; }
+    float Satiety { get; }
 
-    float timeToConsumeIt { get; }
+    float InteractionDistance { get; }
 
-    public GameObject gameObjecto {  get; }  
+    float TimeToConsumeIt { get; }
 
-    public void Consume();
+    public GameObject ResourceGameObject {  get; }  
+
+    public void DestroyGameobject();
 
 
 }
