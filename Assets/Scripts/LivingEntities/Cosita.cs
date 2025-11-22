@@ -211,7 +211,7 @@ public class Cosita : LivingEntity
             SearchForResource("Water");
             
         }
-        else if ( sated < 60f )   
+        else if ( sated < 60f )   // si no he encontrado agua pero tengo hambre, busco comida
         {
             
             SearchForResource("Food");
@@ -246,6 +246,7 @@ public class Cosita : LivingEntity
             IResource resource = collider.GetComponent<IResource>();
             if (resource != null && resource.ResourceType == thingWanted )
             {
+                Debug.Log("Encuentro lo que quiero");
                 return resource;
 
             }
@@ -302,7 +303,7 @@ public class Cosita : LivingEntity
     private void SearchForResource(string resourceName)
     {
         IResource resourceFound = SensingResources(resourceName);
-        if (resourceFound != null)
+        if (resourceFound != null && resourceFound.ResourceGameObject != null)
         {
             //actionDoing = resourceName.Equals("Water") ? CreatureActions.GoingToWater : CreatureActions.GoingToFood;
             
@@ -477,29 +478,33 @@ public class Cosita : LivingEntity
             }
         }
     }
-    public IEnumerator EatingCooldown(float time)
-    {
+    //public IEnumerator EatingCooldown(float time)
+    //{
 
 
-        // Espera 5 segundos antes de permitir la siguiente acción
-        yield return new WaitForSeconds(time);
-       
-
-        isBusy = false;
+    //    Espera 5 segundos antes de permitir la siguiente acción
+    //   yield return new WaitForSeconds(time);
 
 
-    }
-    public IEnumerator DrinkingCooldown(float time)
+    //    isBusy = false;
+
+
+    //}
+    public IEnumerator ConsumingResourceCooldown(IResource resource)
     {
 
 
         // Espera 5 segundos antes de permitir la siguiente acción
         isBusy = true;
-        hydrated += resourceTarget.Hydration;
+
+        hydrated += resource.Hydration;
         if (hydrated > 100)
             hydrated = 100;
-        resourceTarget = null;
-        yield return new WaitForSeconds(time);
+        sated += resource.Satiety;
+        if (sated > 100)
+            sated = 100;
+
+        yield return new WaitForSeconds(resource.TimeToConsumeIt);
         isBusy = false;
 
 
