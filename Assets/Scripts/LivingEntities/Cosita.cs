@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using TMPro;
 using Unity.VisualScripting;
@@ -17,6 +18,7 @@ public class Cosita : LivingEntity
     [SerializeField] public float hydrated;
     [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
+    [SerializeField] public float interactionRange;
     [SerializeField] public float reproductionHunger;
     [SerializeField] public float reproductionHungerRate;
     [SerializeField] public bool hasPassedReproCooldown;
@@ -26,10 +28,11 @@ public class Cosita : LivingEntity
 
 
     public IResource resourceTarget;
-    //public IResource resource;
-
-
     public List<IResource> inventoryList;
+
+    public Cosita neighbourCositaInNeed;
+
+    
     public NavMeshAgent Agent;
 
     //private Vector3 desperateDirection;
@@ -206,37 +209,61 @@ public class Cosita : LivingEntity
 
         //if busy then return 
 
-        if (hydrated < 50f )
-        {
+        //if (hydrated < 50f && resourceTarget == null ) // si tengo sed y no tengo asignado ya un target pues voy a buscar agua
+        //{
+
+        //}
+        //else if ( sated < 60f && resourceTarget == null)   // si no he encontrado agua pero tengo hambre, busco comida
+        //{
+
+        if (resourceTarget == null && hydrated < 50f )
             SearchForResource("Water");
-            
-        }
-        else if ( sated < 60f )   // si no he encontrado agua pero tengo hambre, busco comida
-        {
-            
+        if (resourceTarget == null && sated < 60f && inventoryList.Count < genes.inventorySlots) 
             SearchForResource("Food");
-            
 
-        }
-        
-
-
-        else if (hasPassedReproCooldown && reproductionHunger > 55f)
+        if(inventoryList.Count >= genes.inventorySlots / 2 && neighbourCositaInNeed == false)
         {
-            Agent.ResetPath(); // quiero que se quede parado
-            //actionDoing = CreatureActions.Cloning;
-        }
-        else
-        {
-            //target = null;
-            //actionDoing = CreatureActions.Exploring;
-        }
-        
+            SearchForNeighbours();
 
-        
+        }
+
+
+        //}
+
+
+
+        //if (hasPassedReproCooldown && reproductionHunger > 55f)
+        //{
+        //    Agent.ResetPath(); // quiero que se quede parado
+        //    //actionDoing = CreatureActions.Cloning;
+        //}
+        //else
+        //{
+        //    //target = null;
+        //    //actionDoing = CreatureActions.Exploring;
+        //}
+
+
+
         //StartCoroutine(ActionCooldown());
     }
-  
+    public void SearchForNeighbours()
+    {
+        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
+        foreach (Collider collider in objectsDetected)
+        {
+            Cosita cosita = collider.GetComponent<Cosita>();
+            if (cosita != null && cosita.inventoryList.Count < cosita.genes.inventorySlots)
+            {
+                neighbourCositaInNeed = cosita;
+                return;
+            }
+            else
+            {
+                neighbourCositaInNeed = null;
+            }
+        }
+    }
     public IResource SensingResources(string thingWanted) // I pass a string with the name of the thing I want
     {
         Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
@@ -246,7 +273,6 @@ public class Cosita : LivingEntity
             IResource resource = collider.GetComponent<IResource>();
             if (resource != null && resource.ResourceType == thingWanted )
             {
-                Debug.Log("Encuentro lo que quiero");
                 return resource;
 
             }
@@ -262,11 +288,17 @@ public class Cosita : LivingEntity
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         hungerBar.SetSliderValue(sated);
         waterBar.SetSliderValue(hydrated);
+        if (resourceTarget != null)
+        {
+            debugUI.text = "Mi target es: " + resourceTarget + "del tipo: " + resourceTarget.ResourceType + "JUNTO CON MI GAMEOBJECT" + resourceTarget.ResourceGameObject;
+
+        }
+        else debugUI.text = "No tengo Resourcetarget ";
         reproductionBar.SetSliderValue(reproductionHunger);
 
 
 
-        debugUI.text = inventoryList.Count.ToString();
+        //debugUI.text = inventoryList.Count.ToString();
 
 
         //if (target)
@@ -311,6 +343,7 @@ public class Cosita : LivingEntity
             
                 //actionDoing = CreatureActions.GoingToWater;
                 resourceTarget = resourceFound;
+                Agent.ResetPath(); // con esto va directamente sin terminar de hacer el path que tenia marcado antes de encontrar agua
 
             //resourceTargetUI.text = resourceTarget.name.ToString();
 
@@ -495,7 +528,6 @@ public class Cosita : LivingEntity
 
 
         // Espera 5 segundos antes de permitir la siguiente acción
-        isBusy = true;
 
         hydrated += resource.Hydration;
         if (hydrated > 100)
@@ -507,35 +539,16 @@ public class Cosita : LivingEntity
         yield return new WaitForSeconds(resource.TimeToConsumeIt);
         isBusy = false;
 
-
-
-
-
-
     }
-
-    public void MoveToTarget(GameObject target)
+    public IEnumerator BusyCoolDown(float time)
     {
-        //Vector3 targetPositionIgnoringY = new Vector3(target.position.x, transform.position.y, target.position.z);
-        //Vector3 dir = (targetPositionIgnoringY - transform.position).normalized;
+        isBusy = true;
+        yield return new WaitForSeconds(time);
+        isBusy = false;
 
-        if (Agent.hasPath)
-            return;
-
-        if (target)
-            Agent.SetDestination(target.transform.position);
-        //Agent.Move(dir * speed * Time.deltaTime);
-
-
-        //transform.position = Vector3.MoveTowards(
-        //    transform.position,
-        //    targetPositionIgnoringY,
-        //    speed * Time.deltaTime
-        //);
-
-
-        //currentDirection = (targetPositionIgnoringY - transform.position).normalized;
     }
+
+   
     public void MoveDesesperatly()
     {
         if (Agent.hasPath)
@@ -544,6 +557,15 @@ public class Cosita : LivingEntity
         Vector3 dir = Vector3.forward;
         Agent.SetDestination(dir);
 
+    }
+
+    public void MoveToTarget(Vector3 target)
+    {
+        if (Agent.hasPath)
+            return;
+
+        
+        Agent.SetDestination(target);
     }
     public void MoveToRandomPoint()
     {

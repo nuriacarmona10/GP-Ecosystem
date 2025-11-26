@@ -13,24 +13,30 @@ public class ActionManager : MonoBehaviour
     {
         cosita = GetComponent<Cosita>();
 
-        if(cosita == null )
-        {
-            Debug.Log("Mi cosita es null");
-        }
+       
        
         //cosita = GetComponent<Cosita>();
         actionList = new List<Action>
         {
             //Priorities makes no sense, I can use their position in the Array to determine the priority but maybe in the future I can calculate it depending on the context of cosita
-            new Action(CreatureActions.Drinking, 1, () => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)),
+            new Action(CreatureActions.Drinking, 1, () => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water" &&
+                                                    cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)),
             new Action(CreatureActions.Eating, 2, () =>  cosita.sated < 30 && cosita.inventoryList.Count > 0 ),
-            new Action(CreatureActions.AddingFoodToInventory, 4, () => cosita.inventoryList.Count < cosita.genes.inventorySlots && cosita.resourceTarget != null && // tengo problemas porque se acceden a objetos una vez están ya borrados
-                                                                      cosita.resourceTarget.ResourceGameObject != null &&
-                                                                      cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)){
-            },
-            new Action(CreatureActions.GoingToWater, 5,() => cosita.hydrated < 50 && cosita.resourceTarget != null),
-            new Action(CreatureActions.GoingToFood, 6, () => cosita.sated < 60 && cosita.resourceTarget != null && cosita.inventoryList.Count < cosita.genes.inventorySlots),
-            new Action(CreatureActions.Exploring,7, () => true)
+            new Action(CreatureActions.Cloning,3, () =>  cosita.reproductionHunger > 80 ), 
+           
+            new Action(CreatureActions.AddingFoodToInventory, 5, () =>
+                                        cosita.inventoryList.Count < cosita.genes.inventorySlots &&
+                                        cosita.resourceTarget != null &&
+                                        cosita.resourceTarget.ResourceGameObject != null &&  // Verifica que el ResourceGameObject no esté destruido
+                                        cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)
+                                        ),
+            new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
+            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null 
+                                                            && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < cosita.genes.inventorySlots),
+            new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
+                                                    && cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionRange )), // has to have at least half of his inventory full
+            new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
+            new Action(CreatureActions.Exploring, 9, () => true)
         }; 
     }
 
@@ -41,34 +47,23 @@ public class ActionManager : MonoBehaviour
             if (action == null)
                 return;
 
-            //Debug.Log("Esta es la primera accion"+ action.action.ToString());
-            Debug.Log("Estoy esta acttion" + action.action.ToString());
-
-            if (cosita.resourceTarget != null)
-            {
-                Debug.Log("Esta es mi resource target" + cosita.resourceTarget);
-                Debug.Log("Esta es mi gameobject" + cosita.resourceTarget.ResourceGameObject);
-            }
-            else
-                Debug.Log("Estamos jodidos nene");
-
+           
 
             if (action.condition())
             {
-                Debug.Log("Accion que es true es: " + action.action.ToString());
 
                 switch (action.action)
                 {
                     case CreatureActions.GoingToWater:
                         cosita.actionDoing = CreatureActions.GoingToWater;
-                        cosita.MoveToTarget(cosita.resourceTarget.ResourceGameObject);
+                        cosita.MoveToTarget(cosita.resourceTarget.ResourceGameObject.transform.position);
 
                         return;
 
                     case CreatureActions.GoingToFood:
 
                         cosita.actionDoing = CreatureActions.GoingToFood;
-                        cosita.MoveToTarget(cosita.resourceTarget.ResourceGameObject);
+                        cosita.MoveToTarget(cosita.resourceTarget.ResourceGameObject.transform.position);
 
                         return;
 
@@ -87,11 +82,31 @@ public class ActionManager : MonoBehaviour
                         cosita.isBusy = true;
                         cosita.actionDoing = CreatureActions.AddingFoodToInventory;
                         cosita.AddResourceToInventory(cosita.resourceTarget);
-                        StartCoroutine(cosita.ConsumingResourceCooldown(cosita.resourceTarget));
+                        StartCoroutine(cosita.BusyCoolDown(3f));
                         cosita.resourceTarget.DestroyGameobject();
                         cosita.resourceTarget = null;
-
                         cosita.Agent.ResetPath();
+
+                        return;
+
+                    case CreatureActions.GoingToNeighbour:
+
+                        Debug.Log("TENGO GANAS DE COMPARTIR");
+
+                        cosita.actionDoing = CreatureActions.GoingToNeighbour;
+                        if (cosita.Agent.remainingDistance < 0.5f)
+                        {
+                            cosita.Agent.ResetPath();
+                        }
+                        cosita.MoveToTarget(cosita.neighbourCositaInNeed.transform.position);
+
+                        return;
+
+                    case CreatureActions.Sharing:
+                        cosita.actionDoing = CreatureActions.Sharing;
+                        cosita.neighbourCositaInNeed = null;
+                        Debug.Log("ESTOY COMPARTIENDO");
+                        StartCoroutine(cosita.BusyCoolDown(3f));
 
                         return;
 
@@ -105,6 +120,7 @@ public class ActionManager : MonoBehaviour
 
 
                         cosita.isBusy = true;
+                        cosita.Agent.ResetPath();
                         StartCoroutine(cosita.ConsumingResourceCooldown(apple as IResource));
                         //apple.Consume();
                         //Debug.Log("Quito la manzanita de mi inventario porque me la comi");

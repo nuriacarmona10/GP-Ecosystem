@@ -2255,7 +2255,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &4505014098960942488
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2614,6 +2614,7 @@ MonoBehaviour:
   hydrated: 50
   sated: 50
   sensingRange: 6
+  interactionRange: 1
   reproductionHunger: 0
   reproductionHungerRate: 2
   hasPassedReproCooldown: 1
@@ -2628,6 +2629,7 @@ MonoBehaviour:
   inventorySlotUI: {fileID: 4494336960649625565}
   SlotPrefab: {fileID: 5392053177579993705, guid: ea3561ed0918f1d42810504723d23d2e, type: 3}
   appleSlotPrefab: {fileID: 2427720007102517834, guid: 1b103cf2af018a04a807fe5eb12181f8, type: 3}
+  actionDoing: 0
   debugUI: {fileID: 9176328779681569118}
   isBusy: 0
 --- !u!65 &4000022370161271325
@@ -2685,7 +2687,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ae241e13370f8c40a81b1466fe39060, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cosita: {fileID: 8191127640505183510}
 --- !u!1 &9129115616870419667
 GameObject:
   m_ObjectHideFlags: 0

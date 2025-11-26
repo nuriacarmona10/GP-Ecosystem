@@ -17,6 +17,9 @@ public class EcosystemManager : MonoBehaviour
     public TMP_Text treesCountText;
     public TMP_Text treesInitializedCountText;
 
+    [Header("PREFABS")]
+    public GameObject applePrefab;
+
     [Header("Populations")] 
     public Population[] initialPopulations;
 

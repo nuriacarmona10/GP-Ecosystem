@@ -12,7 +12,7 @@ public interface IResource
 
     float TimeToConsumeIt { get; }
 
-    public GameObject ResourceGameObject {  get; }  
+    public GameObject ResourceGameObject {  get; }
 
     public void DestroyGameobject();
 

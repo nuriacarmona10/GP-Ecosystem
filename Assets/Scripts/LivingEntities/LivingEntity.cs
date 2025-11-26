@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class LivingEntity : MonoBehaviour
 {
-    public Specie specie;
+    [HideInInspector] public Specie specie;
 
     
 
