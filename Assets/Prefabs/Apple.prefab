@@ -216,6 +216,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   energy: 35
+  TimeToMature: 0
+  parentTree: {fileID: 0}
+  isRipe: 0
 --- !u!135 &4039744293034011258
 SphereCollider:
   m_ObjectHideFlags: 0

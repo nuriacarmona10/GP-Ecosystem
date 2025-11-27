@@ -8,7 +8,7 @@ public interface IResource
     float Hydration { get; }
     float Satiety { get; }
 
-    float InteractionDistance { get; }
+    Vector3 InteractionDistance { get; }
 
     float TimeToConsumeIt { get; }
 

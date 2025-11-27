@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Tree : LivingEntity
+public class AppleTree : LivingEntity
 {
 
     public GameObject applePrefab;
@@ -70,7 +70,7 @@ public class Tree : LivingEntity
             {
                 GameObject a = Instantiate(applePrefab, spawnPoint.transform);
                 Apple apple = a.GetComponent<Apple>();
-               // apple.Init(this);
+                apple.Init(this);
                 SubscribeAppleEvent(apple);
                 apples.Add(apple);
                 StartCoroutine(apple.RipeTime());
@@ -89,7 +89,7 @@ public class Tree : LivingEntity
             {
                 GameObject a = Instantiate(applePrefab, spawnPoint.transform);
                 Apple apple = a.GetComponent<Apple>();
-                //apple.Init(this);
+                apple.Init(this);
                 SubscribeAppleEvent(apple);
                 apples.Add(apple);
                 StartCoroutine(apple.RipeTime());
@@ -98,11 +98,11 @@ public class Tree : LivingEntity
             }
         }
 
-        
+
 
         //int indexRandomFreeSpot = appleSpawnPoints.IndexOf(freeSpawnPoints[randomIndex]);
 
-      
+
 
 
 

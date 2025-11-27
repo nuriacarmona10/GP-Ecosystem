@@ -9,21 +9,41 @@ public class Apple : MonoBehaviour, IResource
     public string ResourceType => "Food";
     public float Hydration => 20f;
     public float Satiety => 30f;
-    public float InteractionDistance => 1.5f;
+    public Vector3 InteractionDistance => new Vector3(1.5f, 0.5f, 1.5f);
     public GameObject ResourceGameObject => this.gameObject;
     public float TimeToConsumeIt => 3f;
 
-    public float TimeToMature;
+    private float TimeToMature;
+    private float TimeToSpawn;
 
-    public Tree parentTree;
+    public AppleTree parentTree;
+
 
     public bool isRipe;
 
-    public void Init(Tree parent)
+    
+
+    // Delegado para notificar cuando una manzana madure
+    public delegate void AppleRipeEvent(Apple apple);
+    public event AppleRipeEvent OnAppleRipe;
+    public delegate void AppleRespawnEvent();
+    public event AppleRespawnEvent OnAppleSpawn;
+
+    public void Init(AppleTree parent)
     {
         parentTree = parent;
         isRipe = false;
-        TimeToMature = Random.Range(6, 10);
+        TimeToMature = Random.Range(6, 40);
+        TimeToSpawn = 30;
+
+
+}
+public void Start()
+    {
+        StartCoroutine(RipeTime());
+
+
+
     }
 
 
@@ -39,6 +59,7 @@ public class Apple : MonoBehaviour, IResource
                 cosita.resourceTarget = null;  // Limpia la referencia
             }
         }
+        parentTree.UnsubscribeAppleEvent(this);
         parentTree.apples.Remove(this);
         DestroyImmediate(this.gameObject); // de verdad esto lo ha arreglado todo, i cant not believe
         //this.gameObject.SetActive(true);
@@ -58,9 +79,20 @@ public class Apple : MonoBehaviour, IResource
 
     public IEnumerator RipeTime()
     {
+        Debug.Log("Llevo esperando unr ato wey" + TimeToMature);
         yield return new WaitForSeconds(TimeToMature);
         isRipe = true;
-        //parentTree.OnAppleRipe?.Invoke(this); // Llama al delegado
+        Debug.Log("Ha pasado el tiempo locoo");
+        OnAppleRipe?.Invoke(this); // Llama al delegado para notificar que la manzana está madura
+    }
+    
+    public IEnumerator RespawnTime()
+    {
+
+        yield return new WaitForSeconds(TimeToSpawn);
+        OnAppleSpawn?.Invoke(); // Llama al delegado para notificar que la manzana está madura
+
+
     }
 
 

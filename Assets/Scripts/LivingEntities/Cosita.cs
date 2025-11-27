@@ -18,7 +18,7 @@ public class Cosita : LivingEntity
     [SerializeField] public float hydrated;
     [SerializeField] public float sated;
     [SerializeField] public float sensingRange;
-    [SerializeField] public float interactionRange;
+    [SerializeField] public Vector3 interactionBetweenCositasRange;
     [SerializeField] public float reproductionHunger;
     [SerializeField] public float reproductionHungerRate;
     [SerializeField] public bool hasPassedReproCooldown;
@@ -216,9 +216,9 @@ public class Cosita : LivingEntity
         //else if ( sated < 60f && resourceTarget == null)   // si no he encontrado agua pero tengo hambre, busco comida
         //{
 
-        if (resourceTarget == null && hydrated < 50f )
+        if (hydrated < 50f )
             SearchForResource("Water");
-        if (resourceTarget == null && sated < 60f && inventoryList.Count < genes.inventorySlots) 
+        if (sated < 60f && inventoryList.Count < genes.inventorySlots) 
             SearchForResource("Food");
 
         if(inventoryList.Count >= genes.inventorySlots / 2 && neighbourCositaInNeed == false)
@@ -268,17 +268,27 @@ public class Cosita : LivingEntity
     {
         Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
 
+        IResource closestResource = null;
+        float closestDistance = Mathf.Infinity;  // Comenzamos con una distancia muy grande
+
         foreach (Collider collider in objectsDetected)
         {
             IResource resource = collider.GetComponent<IResource>();
-            if (resource != null && resource.ResourceType == thingWanted )
+            if (resource != null && resource.ResourceType == thingWanted)
             {
-                return resource;
+                // Calculamos la distancia desde el objeto que llama al método hasta el objeto detectado
+                float distance = Vector3.Distance(transform.position, collider.transform.position);
 
+                // Si esta distancia es la más cercana, actualizamos el recurso más cercano
+                if (distance < closestDistance)
+                {
+                    closestResource = resource;
+                    closestDistance = distance;  // Actualizamos la distancia más cercana
+                }
             }
         }
 
-        return null;
+        return closestResource;  // Devolvemos el recurso más cercano o null si no se encontró ninguno
 
     }
 
@@ -567,61 +577,60 @@ public class Cosita : LivingEntity
         
         Agent.SetDestination(target);
     }
-    public void MoveToRandomPoint()
+    public void MoveToRandomPoint( int sensingRangeMultiplier)
     {
         Vector3 randomPoint;
 
         if (Agent.hasPath)
             return;
 
-        if(GetRandomPoint(out randomPoint))
+        if (GetRandomPoint(sensingRangeMultiplier, out randomPoint))
         {
-        
+
             Agent.SetDestination(randomPoint);
 
         }
 
-        
-       
 
-        //     walkingTimer += Time.deltaTime;
+    }
 
-        //// Si ya pasaron 3 segundos, cambia la dirección
-        //if (walkingTimer >= 3f)
-        //{
-        //    Vector3 randomdirection = GetRandomDirection();
-        //    Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
-        //    currentDirection = smoothedDir;
-        //    walkingTimer = 0f; // Reinicia el contador
-        //}
+    public void MoveToFarRandomPoint()
+    {
+        Vector3 randomPoint;
 
+        if (Agent.hasPath)
+            return;
 
+        if (GetFarRandomPoint(out randomPoint))
+        {
 
+            Agent.SetDestination(randomPoint);
 
+        }
 
 
     }
-    //public Vector3 GetRandomPoint()
-    //{
-    //    for (int i = 0; i < 10; i++) // hasta 10 intentos
-    //    {
-    //        Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange;
-    //        randomPoint.y = transform.position.y;
 
-    //        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-    //        {
-    //            return hit.position;
-    //        }
-    //    }
+    bool GetRandomPoint(int sensingRangeMultiplier,out Vector3 result)
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange* sensingRangeMultiplier;
+            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            {
+                result = hit.position;
+                return true;
+            }
+        }
+        result = Vector3.zero;
+        return false;
+    }
 
-    //    // Si no encontró ninguno, devuélvelo a su posición actual (no al (0,0,0))
-    //    return transform.position;
-    //}
-    bool GetRandomPoint(out Vector3 result)
+    bool GetFarRandomPoint(out Vector3 result)
     {
         for (int i = 0; i < 30; i++)
         {
-            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange*2;
+            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange*4;
             if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             {
                 result = hit.position;
@@ -633,10 +642,10 @@ public class Cosita : LivingEntity
     }
 
 
-    public bool AreNear(GameObject objectToCheck, float range)
+    public bool AreNear(GameObject objectToCheck, Vector3 range)
     {
 
-        return System.Math.Abs(this.transform.position.x - objectToCheck.transform.position.x) <= range && System.Math.Abs(this.transform.position.z - objectToCheck.transform.position.z) <= range;
+        return System.Math.Abs(this.transform.position.x - objectToCheck.transform.position.x) <= range.x && System.Math.Abs(this.transform.position.y - objectToCheck.transform.position.y) <= range.y && System.Math.Abs(this.transform.position.z - objectToCheck.transform.position.z) <= range.z;
         //float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
         //Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
 

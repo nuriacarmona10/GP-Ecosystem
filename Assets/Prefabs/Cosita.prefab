@@ -2255,7 +2255,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4505014098960942488
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2614,11 +2614,12 @@ MonoBehaviour:
   hydrated: 50
   sated: 50
   sensingRange: 6
-  interactionRange: 1
+  interactionBetweenCositasRange: {x: 2, y: 1, z: 2}
   reproductionHunger: 0
   reproductionHungerRate: 2
   hasPassedReproCooldown: 1
   actionManager: {fileID: 5916065292842235871}
+  neighbourCositaInNeed: {fileID: 0}
   Agent: {fileID: 1666855126760284348}
   hungerBar: {fileID: 1606512000943933081}
   waterBar: {fileID: 774664476415201110}

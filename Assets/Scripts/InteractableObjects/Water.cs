@@ -7,7 +7,8 @@ public class Water : MonoBehaviour, IResource
     public string ResourceType => "Water";
     public float Hydration => 100f;
     public float Satiety => 0f;
-    public float InteractionDistance => 1.5f;
+    public Vector3 InteractionDistance => new Vector3(1.5f, 0.5f, 1.5f);
+
 
     public GameObject ResourceGameObject => this.gameObject;
     public float TimeToConsumeIt => 3f;

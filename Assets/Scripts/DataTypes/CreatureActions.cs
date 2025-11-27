@@ -15,6 +15,6 @@ public enum CreatureActions
     GoingToWater,
     GoingToNeighbour,
     Sharing,
-    WalkingDesperately,
+    LookingForWater,
 
 }

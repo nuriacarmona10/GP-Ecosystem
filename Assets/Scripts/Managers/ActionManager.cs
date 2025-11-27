@@ -13,17 +13,18 @@ public class ActionManager : MonoBehaviour
     {
         cosita = GetComponent<Cosita>();
 
-       
-       
+
+
         //cosita = GetComponent<Cosita>();
         actionList = new List<Action>
         {
             //Priorities makes no sense, I can use their position in the Array to determine the priority but maybe in the future I can calculate it depending on the context of cosita
             new Action(CreatureActions.Drinking, 1, () => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water" &&
                                                     cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)),
-            new Action(CreatureActions.Eating, 2, () =>  cosita.sated < 30 && cosita.inventoryList.Count > 0 ),
-            new Action(CreatureActions.Cloning,3, () =>  cosita.reproductionHunger > 80 ), 
-           
+            new Action(CreatureActions.Eating, 2, () =>  cosita.sated < 40 && cosita.inventoryList.Count > 0 ),
+            //new Action(CreatureActions.LookingForWater, 6, () => ( (cosita.hydrated <30 || cosita.sated <30) && cosita.resourceTarget == null) || (cosita.hydrated < 30 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Food") || (cosita.sated<30 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water" ) ),
+            new Action(CreatureActions.Cloning,3, () =>  cosita.reproductionHunger > 80 ),
+
             new Action(CreatureActions.AddingFoodToInventory, 5, () =>
                                         cosita.inventoryList.Count < cosita.genes.inventorySlots &&
                                         cosita.resourceTarget != null &&
@@ -31,10 +32,10 @@ public class ActionManager : MonoBehaviour
                                         cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)
                                         ),
             new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
-            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null 
+            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
                                                             && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < cosita.genes.inventorySlots),
             new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
-                                                    && cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionRange )), // has to have at least half of his inventory full
+                                                    && cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionBetweenCositasRange )), // has to have at least half of his inventory full
             new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
             new Action(CreatureActions.Exploring, 9, () => true)
         }; 
@@ -89,6 +90,7 @@ public class ActionManager : MonoBehaviour
 
                         return;
 
+                  
                     case CreatureActions.GoingToNeighbour:
 
                         Debug.Log("TENGO GANAS DE COMPARTIR");
@@ -142,16 +144,7 @@ public class ActionManager : MonoBehaviour
 
                         return;
 
-                    case CreatureActions.WalkingDesperately:
-                        if (cosita.Agent.remainingDistance < 0.5f)
-                        {
-                            cosita.Agent.ResetPath();
-                            //currentRandomPoint = Vector3.zero;
-                        }
-                        cosita.MoveToRandomPoint();
-                        //Agent.Move(desperateDirection * Time.deltaTime * speed);
-                        //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
-                        return;
+                   
                     case CreatureActions.Cloning:
                         cosita.actionDoing = CreatureActions.Cloning;
                         cosita.Reproduce();
@@ -164,9 +157,32 @@ public class ActionManager : MonoBehaviour
                             cosita.Agent.ResetPath();
                             //currentRandomPoint = Vector3.zero;
                         }
-                        cosita.MoveToRandomPoint();
+                        cosita.MoveToRandomPoint(2);
                         //ChooseNextAction();
                         return;
+
+                    case CreatureActions.LookingForWater:
+
+                        cosita.actionDoing = CreatureActions.LookingForWater;
+
+                        if (cosita.Agent.remainingDistance < 0.5f)
+                        {
+                            cosita.Agent.ResetPath();
+                            //currentRandomPoint = Vector3.zero;
+                        }
+                        cosita.MoveToRandomPoint(2);
+                        //ChooseNextAction();
+                        return;
+                        //cosita.actionDoing = CreatureActions.WalkingDesperately;
+
+                        //if (cosita.Agent.remainingDistance < 0.5f)
+                        //{
+                        //    cosita.Agent.ResetPath();
+                        //    currentRandomPoint = Vector3.zero;
+                        //}
+                        //cosita.MoveToFarRandomPoint();
+                        //ChooseNextAction();
+                        //return;
                 }
             }
         }
