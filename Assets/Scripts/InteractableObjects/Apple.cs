@@ -10,8 +10,9 @@ public class Apple : MonoBehaviour, IResource
     public float Hydration => 20f;
     public float Satiety => 30f;
     public Vector3 InteractionDistance => new Vector3(1.5f, 0.5f, 1.5f);
-    public GameObject ResourceGameObject => this.gameObject;
     public float TimeToConsumeIt => 3f;
+
+    public GameObject ResourceGameObject => this.gameObject;
 
     private float TimeToMature;
     private float TimeToSpawn;
@@ -33,7 +34,7 @@ public class Apple : MonoBehaviour, IResource
     {
         parentTree = parent;
         isRipe = false;
-        TimeToMature = Random.Range(6, 40);
+        TimeToMature = Random.Range(6, 20);
         TimeToSpawn = 30;
 
 
@@ -79,10 +80,8 @@ public void Start()
 
     public IEnumerator RipeTime()
     {
-        Debug.Log("Llevo esperando unr ato wey" + TimeToMature);
         yield return new WaitForSeconds(TimeToMature);
         isRipe = true;
-        Debug.Log("Ha pasado el tiempo locoo");
         OnAppleRipe?.Invoke(this); // Llama al delegado para notificar que la manzana está madura
     }
     

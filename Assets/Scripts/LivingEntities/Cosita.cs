@@ -13,17 +13,21 @@ using static UnityEditor.PlayerSettings;
 public class Cosita : LivingEntity
 {
     
-    [SerializeField] public float health;     // Salud de la cosita
-    [SerializeField] public float speed;
-    [SerializeField] public float hydrated;
-    [SerializeField] public float sated;
-    [SerializeField] public float sensingRange;
-    [SerializeField] public Vector3 interactionBetweenCositasRange;
-    [SerializeField] public float reproductionHunger;
-    [SerializeField] public float reproductionHungerRate;
-    [SerializeField] public bool hasPassedReproCooldown;
-    [SerializeField] public Genes genes;
-    [SerializeField] public ActionManager actionManager;
+     public float speed;
+     public float hydrated;
+     public float sated;
+     public Vector3 interactionBetweenCositasRange;
+     public float reproductionHunger;
+     public float reproductionHungerRate;
+     public bool hasPassedReproCooldown;
+     public bool isBaby;
+     public Genes genes;
+     public ActionManager actionManager;
+     public Renderer cositaRenderer;
+
+    
+
+
 
 
 
@@ -39,14 +43,14 @@ public class Cosita : LivingEntity
 
     //public Vector3 currentDirection; // Esto seguramente borrar junto con los metodos viejos de Walk y del movimiento de cosita en general
     //public Vector3 currentRandomPoint;
-   // public Transform currentRandomPositionGoing;
+    // public Transform currentRandomPositionGoing;
 
     //BoxCollider boxColliderCosita;
     // private float walkingTimer;              // Contador de tiempo
 
     //Reproduction
-   
 
+    public int count = 0;
 
     ///UI
     [Header("UI")]
@@ -76,18 +80,23 @@ public class Cosita : LivingEntity
 
     public override void Init(LivingEntity mother = null)
     {
-        if (mother != null)
+        if (mother)
         {
             Cosita cositaMom = mother as Cosita;
-            genes = new Genes(cositaMom.genes.inventorySlots); // I'm passing down same genes as mother , pasar directamente gen
-
-
+            genes = new Genes(cositaMom.genes); // I'm passing down same genes as mother , pasar directamente gen
         }
         else
         {
-            genes = Genes.RandomGenes();
+            genes = new Genes();
+
         }
-            //Debug.Log("INIT COSITA");
+
+
+
+
+
+
+        //Debug.Log("INIT COSITA");
         specie = Specie.Cosita;
         resourceTarget = null;
         //boxColliderCosita = GetComponent<BoxCollider>();
@@ -112,7 +121,9 @@ public class Cosita : LivingEntity
         //ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         //ChooseNextAction();
 
-
+        if (isBaby) {
+            StartCoroutine(GrowTimer(genes.timeToGrow));
+        }
 
     }
     public void Reproduce()
@@ -184,7 +195,20 @@ public class Cosita : LivingEntity
 
     }
 
-    
+    IEnumerator GrowTimer(float time)
+    {
+        
+
+        // Espera 5 segundos antes de permitir la siguiente acción
+
+        yield return new WaitForSeconds(time);
+        transform.localScale = transform.localScale * 2;
+        genes.sensingRange = genes.sensingRange * 2;
+
+
+
+
+    }
 
     IEnumerator ReproductionCooldown(float time)
     {
@@ -203,6 +227,30 @@ public class Cosita : LivingEntity
 
 
     }
+
+    public void ToShare(IResource resourceToShare)
+    {
+        if (neighbourCositaInNeed != null)
+        {
+
+            neighbourCositaInNeed.ToReceive(resourceToShare);
+            neighbourCositaInNeed = null;
+
+            StartCoroutine(BusyCoolDown(3f));
+
+        }
+
+    }
+    public void ToReceive(IResource resourceReceived)
+    {
+        this.actionDoing = CreatureActions.Receiving;
+        if (resourceReceived!=null)
+        {
+            this.AddResourceToInventory(resourceReceived);
+
+
+        }
+    }
     public void SensingEnvironment()
     {
         // Inicia la acción
@@ -216,9 +264,9 @@ public class Cosita : LivingEntity
         //else if ( sated < 60f && resourceTarget == null)   // si no he encontrado agua pero tengo hambre, busco comida
         //{
 
-        if (hydrated < 50f )
+        if (hydrated < 90f )
             SearchForResource("Water");
-        if (sated < 60f && inventoryList.Count < genes.inventorySlots) 
+        if (sated < 90f && inventoryList.Count < genes.inventorySlots) 
             SearchForResource("Food");
 
         if(inventoryList.Count >= genes.inventorySlots / 2 && neighbourCositaInNeed == false)
@@ -228,28 +276,10 @@ public class Cosita : LivingEntity
         }
 
 
-        //}
-
-
-
-        //if (hasPassedReproCooldown && reproductionHunger > 55f)
-        //{
-        //    Agent.ResetPath(); // quiero que se quede parado
-        //    //actionDoing = CreatureActions.Cloning;
-        //}
-        //else
-        //{
-        //    //target = null;
-        //    //actionDoing = CreatureActions.Exploring;
-        //}
-
-
-
-        //StartCoroutine(ActionCooldown());
     }
     public void SearchForNeighbours()
     {
-        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
+        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, genes.sensingRange);
         foreach (Collider collider in objectsDetected)
         {
             Cosita cosita = collider.GetComponent<Cosita>();
@@ -266,7 +296,7 @@ public class Cosita : LivingEntity
     }
     public IResource SensingResources(string thingWanted) // I pass a string with the name of the thing I want
     {
-        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, sensingRange);
+        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, genes.sensingRange);
 
         IResource closestResource = null;
         float closestDistance = Mathf.Infinity;  // Comenzamos con una distancia muy grande
@@ -298,12 +328,7 @@ public class Cosita : LivingEntity
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         hungerBar.SetSliderValue(sated);
         waterBar.SetSliderValue(hydrated);
-        if (resourceTarget != null)
-        {
-            debugUI.text = "Mi target es: " + resourceTarget + "del tipo: " + resourceTarget.ResourceType + "JUNTO CON MI GAMEOBJECT" + resourceTarget.ResourceGameObject;
-
-        }
-        else debugUI.text = "No tengo Resourcetarget ";
+        //debugUI.text = "Path Active: " + Agent.hasPath + " | Distancia Restante: " + Agent.remainingDistance;
         reproductionBar.SetSliderValue(reproductionHunger);
 
 
@@ -339,7 +364,7 @@ public class Cosita : LivingEntity
         Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
 
         // Dibuja una esfera en la posición del objeto (el radar de 15m)
-        Gizmos.DrawSphere(transform.position, sensingRange);
+        Gizmos.DrawSphere(transform.position, genes.sensingRange);
     }
     
     private void SearchForResource(string resourceName)
@@ -353,7 +378,7 @@ public class Cosita : LivingEntity
             
                 //actionDoing = CreatureActions.GoingToWater;
                 resourceTarget = resourceFound;
-                Agent.ResetPath(); // con esto va directamente sin terminar de hacer el path que tenia marcado antes de encontrar agua
+                //Agent.ResetPath(); // con esto va directamente sin terminar de hacer el path que tenia marcado antes de encontrar agua
 
             //resourceTargetUI.text = resourceTarget.name.ToString();
 
@@ -383,127 +408,14 @@ public class Cosita : LivingEntity
     public void Act()
     {
         actionManager.ExecuteAction();
-        //switch(actionDoing)
-        //{
-        //    case CreatureActions.GoingToWater:
-        //        if (AreNear(resourceTarget.ResourceGameObject, 1.5f))
-        //        {
-                    
-        //            actionDoing = CreatureActions.Drinking;
-        //            Agent.ResetPath();
-        //            isBusy = true;
-        //            StartCoroutine(DrinkingCooldown(resourceTarget.TimeToConsumeIt));
-
-                  
-        //        }
-        //        else
-        //        {
-        //            MoveToTarget(resourceTarget.ResourceGameObject);
-
-        //        }
-        //        break;
-
-        //    case CreatureActions.GoingToFood:
-
-        //        if(AreNear(resourceTarget.ResourceGameObject, 2f))
-        //        {
-        //            AddResourceToInventory(resourceTarget);
-        //            resourceTarget.Consume();
-        //            isBusy = true;
-        //            StartCoroutine(EatingCooldown(resourceTarget.TimeToConsumeIt));
-        //            resourceTarget = null;
-        //            Agent.ResetPath();
-
-
-
-        //        }
-        //        else
-        //        {
-        //            MoveToTarget(resourceTarget.ResourceGameObject);
-
-        //        }
-        //        break;
-
-        //    case CreatureActions.Eating:
-                
-        //            if (inventoryList.Count>0) { 
-                       
-        //                Debug.Log("Lo he hecho");
-        //                Apple apple = inventoryList[0] as Apple;
-
-        //                sated += apple.Satiety;
-        //                if (sated > 100)
-        //                    sated = 100;
-
-        //                isBusy = true;
-        //                StartCoroutine(EatingCooldown(apple.TimeToConsumeIt));
-        //                //apple.Consume();
-        //                Debug.Log("Quito la manzanita de mi inventario porque me la comi");
-        //                inventoryList.Remove(apple);
-
-        //                Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
-        //                debugUI.text = inventorySlotUI.transform.childCount.ToString();
-
-        //                for (int i = inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
-        //                {
-        //                    Transform child = inventorySlotUI.transform.GetChild(i);
-
-        //                    // Verifica si el hijo tiene hijos
-        //                    if (child.childCount > 0)
-        //                    {
-        //                        Destroy(child.GetChild(0).gameObject);
-        //                        break;
-        //                    }
-        //                }
-        //                //    Transform LastChild = inventorySlotUI.transform.GetChild(inventorySlotUI.transform.childCount - 1).GetChild(0);
-        //                // Debug.Log("Soy el hijo" + LastChild.name);
-
-        //                //if (LastChild != null)
-        //                //{
-        //                //    //LastChild.gameObject.SetActive(false);
-        //                //    Destroy(LastChild.gameObject);
-        //                //    Debug.Log("He destruido a appleSlot");
-        //                //    break;
-
-
-        //                //}
-        //        }
-
-                
-               
-                
-               
-        //        break;
-
-        //    case CreatureActions.WalkingDesperately:
-        //        if (Agent.remainingDistance < 0.5f)
-        //        {
-        //            Agent.ResetPath();
-        //            //currentRandomPoint = Vector3.zero;
-        //        }
-        //        MoveToRandomPoint();
-        //        //Agent.Move(desperateDirection * Time.deltaTime * speed);
-        //        //ChooseNextAction(); // quiero que si es que tiene hambre o sed y encuentra algo que vaya hacia el
-        //        break;
-        //    case CreatureActions.Cloning:
-        //        Reproduce();
-        //        break;
-        //    case CreatureActions.Exploring:
-        //        if (Agent.remainingDistance < 0.5f)
-        //        {
-        //            Agent.ResetPath();
-        //            //currentRandomPoint = Vector3.zero;
-        //        }
-        //        MoveToRandomPoint();
-        //        //ChooseNextAction();
-        //        break;
-        //}
+      
 
     }
     public void AddResourceToInventory(IResource res)
     {
         if (res as Apple)
         {
+            isBusy = true;
             inventoryList.Add(res);
             foreach (Transform slot in inventorySlotUI.transform)
             {
@@ -519,20 +431,13 @@ public class Cosita : LivingEntity
                     break; // Terminar el ciclo ya que hemos encontrado un slot vacío
                 }
             }
+            StartCoroutine(BusyCoolDown(3f));
+            resourceTarget.DestroyGameobject();
+            resourceTarget = null;
+            //Agent.ResetPath();
         }
     }
-    //public IEnumerator EatingCooldown(float time)
-    //{
-
-
-    //    Espera 5 segundos antes de permitir la siguiente acción
-    //   yield return new WaitForSeconds(time);
-
-
-    //    isBusy = false;
-
-
-    //}
+    
     public IEnumerator ConsumingResourceCooldown(IResource resource)
     {
 
@@ -574,51 +479,60 @@ public class Cosita : LivingEntity
         if (Agent.hasPath)
             return;
 
-        
+       
+
+        Debug.Log("Me muevo hacia un target");
         Agent.SetDestination(target);
     }
-    public void MoveToRandomPoint( int sensingRangeMultiplier)
+    public void MoveToRandomPoint()
     {
+        debugUI.text = "Path Active: " + Agent.hasPath + " | Distancia Restante: " + Agent.remainingDistance;
+
         Vector3 randomPoint;
 
         if (Agent.hasPath)
             return;
 
-        if (GetRandomPoint(sensingRangeMultiplier, out randomPoint))
+    
+        if(GetRandomPoint(out randomPoint))
         {
 
-            Agent.SetDestination(randomPoint);
+            if (Agent.SetDestination(randomPoint))
+            {
+            debugUI.text = "Escojo un nuevo punto" + randomPoint;
+
+            }
 
         }
+        //debugUI.text = "remaining distance" + Agent.remainingDistance;
 
 
     }
+    //public Vector3 GetRandomPoint()
+    //{
+    //    for (int i = 0; i < 10; i++) // hasta 10 intentos
+    //    {
+    //        Vector3 randomPoint = transform.position + Random.insideUnitSphere * genes.sensingRange;
+    //        randomPoint.y = transform.position.y;
 
-    public void MoveToFarRandomPoint()
+    //        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+    //        {
+    //            return hit.position;
+    //        }
+    //    }
+
+    //    // Si no encontró ninguno, devuélvelo a su posición actual (no al (0,0,0))
+    //    return transform.position;
+    //}
+    bool GetRandomPoint(out Vector3 result)
     {
-        Vector3 randomPoint;
-
-        if (Agent.hasPath)
-            return;
-
-        if (GetFarRandomPoint(out randomPoint))
+        for (int i = 0; i <30; i++)
         {
-
-            Agent.SetDestination(randomPoint);
-
-        }
-
-
-    }
-
-    bool GetRandomPoint(int sensingRangeMultiplier,out Vector3 result)
-    {
-        for (int i = 0; i < 50; i++)
-        {
-            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange* sensingRangeMultiplier;
+            Vector3 randomPoint = transform.position + Random.insideUnitSphere * genes.sensingRange * 2;
             if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             {
                 result = hit.position;
+
                 return true;
             }
         }
@@ -630,7 +544,7 @@ public class Cosita : LivingEntity
     {
         for (int i = 0; i < 30; i++)
         {
-            Vector3 randomPoint = transform.position + Random.insideUnitSphere * sensingRange*4;
+            Vector3 randomPoint = transform.position + Random.insideUnitSphere * genes.sensingRange*4;
             if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             {
                 result = hit.position;
@@ -646,60 +560,8 @@ public class Cosita : LivingEntity
     {
 
         return System.Math.Abs(this.transform.position.x - objectToCheck.transform.position.x) <= range.x && System.Math.Abs(this.transform.position.y - objectToCheck.transform.position.y) <= range.y && System.Math.Abs(this.transform.position.z - objectToCheck.transform.position.z) <= range.z;
-        //float radius = Mathf.Max(boxColliderCosita.size.x, boxColliderCosita.size.y, boxColliderCosita.size.z) / 2f;
-        //Collider[] objectsDetected = Physics.OverlapSphere(transform.position, radius);
 
-        //foreach (Collider collider in objectsDetected)
-        //{
-        //    if (collider.CompareTag(target.gameObject.tag))
-        //    {
-        //        if (target.gameObject.tag.Equals("Water"))
-        //        {
-        //            actionDoing = CreatureActions.Drinking;
-        //            hydrated = 100;
-
-        //        }
-        //        else if (target.gameObject.tag.Equals("Food"))
-        //        {
-        //            actionDoing = CreatureActions.Eating;
-        //            sated = 100;
-        //        }
-
-        //        target = null;
-        //        break;
-        //    }
-        //}
     }
-
-    //public void Walk()
-    //{
-    //    //I only walk without direcction
-       
-    //    desperateDirection = Vector3.zero; //Im not desperate any more
-
-    //    transform.Translate(currentDirection * Time.deltaTime * speed);
-    //    Debug.Log("Ando a una velocidad de:" + currentDirection * Time.deltaTime * speed);
-    //    //transform.position += smoothedDir * speed;
-    //    // Aumenta el contador de tiempo
-    //    walkingTimer += Time.deltaTime;
-
-    //    // Si ya pasaron 3 segundos, cambia la dirección
-    //    if (walkingTimer >= 3f)
-    //    {
-    //        Vector3 randomdirection = GetRandomDirection();
-    //        Vector3 smoothedDir = Vector3.Lerp(currentDirection, randomdirection, 0.5f).normalized;
-    //        currentDirection = smoothedDir;
-    //        walkingTimer = 0f; // Reinicia el contador
-    //    }
-
-
-       
-
-    //}
-
-   
-
-
 
    
 }

@@ -55,7 +55,7 @@ public class AppleTree : LivingEntity
         // Ejemplo de acción que puede realizarse al madurar la manzana
         apple.gameObject.GetComponent<Rigidbody>().useGravity = true;
         apple.gameObject.GetComponent<Rigidbody>().isKinematic = false;
-        Debug.Log("La manzana " + apple.gameObject.name + " está madura y se lanza.");
+        //Debug.Log("La manzana " + apple.gameObject.name + " está madura y se lanza.");
         StartCoroutine(apple.RespawnTime());
 
         // Aquí puedes agregar la lógica de lo que pasa con la manzana madura

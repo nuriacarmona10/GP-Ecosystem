@@ -16,8 +16,7 @@ public class EcosystemManager : MonoBehaviour
 
     public TMP_Text treesCountText;
     public TMP_Text treesInitializedCountText;
-
-    
+   
 
     [Header("Populations")] 
     public Population[] initialPopulations;
@@ -26,11 +25,15 @@ public class EcosystemManager : MonoBehaviour
     public struct Population
     {
         public GameObject prefab;  // Hace referencia al prefab de la entidad viva
-        public int count;            // Cantidad de entidades vivas en la población
+        public int count;            // Cantidad de entidades vivas en la poblaciï¿½n
     }
 
+    [Header("UI")]
+
+    public GameObject babyCositaPrefab;
 
     public static EcosystemManager Instance;
+
     [HideInInspector] public List<Cosita> cositas;
     [HideInInspector] public List<Tree> trees;
     [HideInInspector] public GameObject cositaPrefab;
@@ -65,6 +68,7 @@ public class EcosystemManager : MonoBehaviour
                     if (livingEntity is Cosita cos)
                     {
                         cos.Init();
+                        cos.cositaRenderer.material.color = cos.genes.genColor;
                         cositaPrefab = popu.prefab; // Esto no esta bien aqui 
                         cositas.Add(cos);
 
@@ -92,12 +96,13 @@ public class EcosystemManager : MonoBehaviour
     }
     public void HandleEntityBorn(Cosita mother)
     {
-        GameObject entity = Instantiate(cositaPrefab, mother.transform.position, Quaternion.identity);
+        GameObject entity = Instantiate(babyCositaPrefab, mother.transform.position, Quaternion.identity);
         LivingEntity livingEntity = entity.GetComponent<LivingEntity>();
         if (livingEntity is Cosita cos)
         {
             cos.Init(mother);
-
+            cos.cositaRenderer.material.color = cos.genes.genColor;
+            cos.genes.sensingRange = cos.genes.sensingRange / 2;
             cositas.Add(cos);
         }
         else if (livingEntity is Tree tree)

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.AI.Navigation.Samples;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements.Experimental;
@@ -21,7 +22,7 @@ public class ActionManager : MonoBehaviour
             //Priorities makes no sense, I can use their position in the Array to determine the priority but maybe in the future I can calculate it depending on the context of cosita
             new Action(CreatureActions.Drinking, 1, () => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water" &&
                                                     cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)),
-            new Action(CreatureActions.Eating, 2, () =>  cosita.sated < 40 && cosita.inventoryList.Count > 0 ),
+            new Action(CreatureActions.Eating, 2, () =>  cosita.sated < 50 && cosita.inventoryList.Count > 0 ),
             //new Action(CreatureActions.LookingForWater, 6, () => ( (cosita.hydrated <30 || cosita.sated <30) && cosita.resourceTarget == null) || (cosita.hydrated < 30 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Food") || (cosita.sated<30 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water" ) ),
             new Action(CreatureActions.Cloning,3, () =>  cosita.reproductionHunger > 80 ),
 
@@ -29,14 +30,15 @@ public class ActionManager : MonoBehaviour
                                         cosita.inventoryList.Count < cosita.genes.inventorySlots &&
                                         cosita.resourceTarget != null &&
                                         cosita.resourceTarget.ResourceGameObject != null &&  // Verifica que el ResourceGameObject no esté destruido
+                                         cosita.resourceTarget.ResourceType == "Food" && 
                                         cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)
                                         ),
-            new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 50 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
-            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
+            new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
+            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 75 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
                                                             && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < cosita.genes.inventorySlots),
-            new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
-                                                    && cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionBetweenCositasRange )), // has to have at least half of his inventory full
-            new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
+            //new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
+                                                    //&& cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionBetweenCositasRange )), // has to have at least half of his inventory full
+           // new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
             new Action(CreatureActions.Exploring, 9, () => true)
         }; 
     }
@@ -78,14 +80,12 @@ public class ActionManager : MonoBehaviour
 
 
                         return;
+                    
 
                     case CreatureActions.AddingFoodToInventory:
-                        cosita.isBusy = true;
+
                         cosita.actionDoing = CreatureActions.AddingFoodToInventory;
                         cosita.AddResourceToInventory(cosita.resourceTarget);
-                        StartCoroutine(cosita.BusyCoolDown(3f));
-                        cosita.resourceTarget.DestroyGameobject();
-                        cosita.resourceTarget = null;
                         cosita.Agent.ResetPath();
 
                         return;
@@ -96,19 +96,25 @@ public class ActionManager : MonoBehaviour
                         Debug.Log("TENGO GANAS DE COMPARTIR");
 
                         cosita.actionDoing = CreatureActions.GoingToNeighbour;
-                        if (cosita.Agent.remainingDistance < 0.5f)
-                        {
-                            cosita.Agent.ResetPath();
-                        }
+                        //if (cosita.Agent.remainingDistance < 0.5f)
+                        //{
+                        //    cosita.Agent.ResetPath();
+                        //}
                         cosita.MoveToTarget(cosita.neighbourCositaInNeed.transform.position);
 
                         return;
 
                     case CreatureActions.Sharing:
                         cosita.actionDoing = CreatureActions.Sharing;
-                        cosita.neighbourCositaInNeed = null;
+                        
+                        if(cosita.inventoryList[cosita.inventoryList.Count - 1] != null)
+                        {
+                            IResource resourceToshare = cosita.inventoryList[cosita.inventoryList.Count - 1];
+                            cosita.ToShare(resourceToshare);
+                        }
+                        
+                        //cosita.neighbourCositaInNeed = null;
                         Debug.Log("ESTOY COMPARTIENDO");
-                        StartCoroutine(cosita.BusyCoolDown(3f));
 
                         return;
 
@@ -122,7 +128,7 @@ public class ActionManager : MonoBehaviour
 
 
                         cosita.isBusy = true;
-                        cosita.Agent.ResetPath();
+                        //cosita.Agent.ResetPath();
                         StartCoroutine(cosita.ConsumingResourceCooldown(apple as IResource));
                         //apple.Consume();
                         //Debug.Log("Quito la manzanita de mi inventario porque me la comi");
@@ -151,38 +157,23 @@ public class ActionManager : MonoBehaviour
                         return;
                     case CreatureActions.Exploring:
                         cosita.actionDoing = CreatureActions.Exploring;
-
-                        if (cosita.Agent.remainingDistance < 0.5f)
+                        if (!cosita.Agent.hasPath)
                         {
-                            cosita.Agent.ResetPath();
-                            //currentRandomPoint = Vector3.zero;
+                            cosita.MoveToRandomPoint();
+
                         }
-                        cosita.MoveToRandomPoint(2);
-                        //ChooseNextAction();
-                        return;
+                       
 
-                    case CreatureActions.LookingForWater:
 
-                        cosita.actionDoing = CreatureActions.LookingForWater;
+                            //if (cosita.Agent.remainingDistance < 0.5f)
+                            //{
+                            //    cosita.Agent.ResetPath();
+                            //    //currentRandomPoint = Vector3.zero;
+                            //}
+                            //ChooseNextAction();
+                            return;
 
-                        if (cosita.Agent.remainingDistance < 0.5f)
-                        {
-                            cosita.Agent.ResetPath();
-                            //currentRandomPoint = Vector3.zero;
-                        }
-                        cosita.MoveToRandomPoint(2);
-                        //ChooseNextAction();
-                        return;
-                        //cosita.actionDoing = CreatureActions.WalkingDesperately;
-
-                        //if (cosita.Agent.remainingDistance < 0.5f)
-                        //{
-                        //    cosita.Agent.ResetPath();
-                        //    currentRandomPoint = Vector3.zero;
-                        //}
-                        //cosita.MoveToFarRandomPoint();
-                        //ChooseNextAction();
-                        //return;
+                   
                 }
             }
         }
