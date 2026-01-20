@@ -35,7 +35,7 @@ public class AppleTree : LivingEntity
     public void SubscribeAppleEvent(Apple apple)
     {
         apple.OnAppleRipe += LaunchApple; // suscribe el método de lanzamiento
-        apple.OnAppleSpawn += SpawnApple; // Desuscribe el método de lanzamiento
+        //apple.OnAppleSpawn += SpawnApple; // suscribe el método de lanzamiento
 
     }
 
@@ -56,7 +56,7 @@ public class AppleTree : LivingEntity
         apple.gameObject.GetComponent<Rigidbody>().useGravity = true;
         apple.gameObject.GetComponent<Rigidbody>().isKinematic = false;
         //Debug.Log("La manzana " + apple.gameObject.name + " está madura y se lanza.");
-        StartCoroutine(apple.RespawnTime());
+        StartCoroutine(SpawnApple(30f));
 
         // Aquí puedes agregar la lógica de lo que pasa con la manzana madura
     }
@@ -80,8 +80,9 @@ public class AppleTree : LivingEntity
     }
 
 
-    public void SpawnApple()
+    public IEnumerator SpawnApple(float timeToSpawn)
     {
+        yield return new WaitForSeconds(timeToSpawn);
 
         foreach (GameObject spawnPoint in appleSpawnPoints)
         {
@@ -93,7 +94,6 @@ public class AppleTree : LivingEntity
                 SubscribeAppleEvent(apple);
                 apples.Add(apple);
                 StartCoroutine(apple.RipeTime());
-                return;
 
             }
         }

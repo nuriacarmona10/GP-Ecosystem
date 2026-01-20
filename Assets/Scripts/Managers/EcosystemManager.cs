@@ -35,7 +35,7 @@ public class EcosystemManager : MonoBehaviour
     public static EcosystemManager Instance;
 
     [HideInInspector] public List<Cosita> cositas;
-    [HideInInspector] public List<Tree> trees;
+    [HideInInspector] public List<AppleTree> trees;
     [HideInInspector] public GameObject cositaPrefab;
     [HideInInspector] public GameObject treePrefab;
 
@@ -50,7 +50,7 @@ public class EcosystemManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        trees = new List<Tree>();
+        trees = new List<AppleTree>();
         cositas = new List<Cosita>();
 
 
@@ -73,7 +73,7 @@ public class EcosystemManager : MonoBehaviour
                         cositas.Add(cos);
 
                     }
-                    else if (livingEntity is Tree tree)
+                    else if (livingEntity is AppleTree tree)
                     {
                         tree.Init();
                         treePrefab = popu.prefab; // Esto no esta bien aqui 
@@ -104,8 +104,9 @@ public class EcosystemManager : MonoBehaviour
             cos.cositaRenderer.material.color = cos.genes.genColor;
             cos.genes.sensingRange = cos.genes.sensingRange / 2;
             cositas.Add(cos);
+            mother.childs.Add(cos);
         }
-        else if (livingEntity is Tree tree)
+        else if (livingEntity is AppleTree tree)
         {   
             tree.Init();
             trees.Add(tree);
@@ -121,7 +122,7 @@ public class EcosystemManager : MonoBehaviour
         }
         else if (trees.Contains(entity))
         {
-            trees.Remove((Tree)entity);
+            trees.Remove((AppleTree)entity);
         }
         UpdateHud();
     }

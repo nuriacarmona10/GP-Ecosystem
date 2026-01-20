@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -21,8 +22,10 @@ public class Apple : MonoBehaviour, IResource
 
 
     public bool isRipe;
+    public TMP_Text DebugText;
 
-    
+
+
 
     // Delegado para notificar cuando una manzana madure
     public delegate void AppleRipeEvent(Apple apple);
@@ -85,14 +88,16 @@ public void Start()
         OnAppleRipe?.Invoke(this); // Llama al delegado para notificar que la manzana está madura
     }
     
-    public IEnumerator RespawnTime()
-    {
+    //public IEnumerator RespawnTime()
+    //{
+    //    DebugText.text = "Me llaman para respawnear:";
+    //    yield return new WaitForSeconds(TimeToSpawn);
+    //    DebugText.text = " respawneao:";
 
-        yield return new WaitForSeconds(TimeToSpawn);
-        OnAppleSpawn?.Invoke(); // Llama al delegado para notificar que la manzana está madura
+    //    OnAppleSpawn?.Invoke(); // Llama al delegado para notificar que es tiempo de crear otra manzana
 
 
-    }
+    //}
 
 
 }

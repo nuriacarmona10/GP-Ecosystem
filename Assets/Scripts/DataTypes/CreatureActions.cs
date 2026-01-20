@@ -13,6 +13,8 @@ public enum CreatureActions
     GoingToFood,
     AddingFoodToInventory,
     GoingToWater,
+    GoingToMom,
+    FeedingBabys,
     GoingToNeighbour,
     Sharing,
     Receiving,

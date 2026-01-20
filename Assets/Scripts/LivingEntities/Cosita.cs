@@ -24,7 +24,7 @@ public class Cosita : LivingEntity
      public Genes genes;
      public ActionManager actionManager;
      public Renderer cositaRenderer;
-
+     public Cosita mom;
     
 
 
@@ -66,6 +66,7 @@ public class Cosita : LivingEntity
     //public TMP_Text satedUI;
 
     public CreatureActions actionDoing = CreatureActions.Idle;
+    public List<Cosita> childs;
 
     //DEBUG
     public TMP_Text debugUI;
@@ -82,8 +83,8 @@ public class Cosita : LivingEntity
     {
         if (mother)
         {
-            Cosita cositaMom = mother as Cosita;
-            genes = new Genes(cositaMom.genes); // I'm passing down same genes as mother , pasar directamente gen
+            mom = mother as Cosita;
+            genes = new Genes(mom.genes); // I'm passing down same genes as mother , pasar directamente gen
         }
         else
         {
@@ -91,8 +92,8 @@ public class Cosita : LivingEntity
 
         }
 
-
-
+        childs = new List<Cosita>();
+        //OnDrawGizmos();
 
 
 
@@ -179,7 +180,6 @@ public class Cosita : LivingEntity
 
 
     }
-
     public void UpdateReproductionHunger()
     {
         float delta = reproductionHungerRate * Time.deltaTime;
@@ -269,13 +269,31 @@ public class Cosita : LivingEntity
         if (sated < 90f && inventoryList.Count < genes.inventorySlots) 
             SearchForResource("Food");
 
+        SearchForMom();
+
         if(inventoryList.Count >= genes.inventorySlots / 2 && neighbourCositaInNeed == false)
         {
             SearchForNeighbours();
-
         }
 
 
+    }
+    public void SearchForMom()
+    {
+        Collider[] objectsDetected = Physics.OverlapSphere(transform.position, genes.sensingRange);
+        foreach (Collider collider in objectsDetected)
+        {
+            Cosita cosita = collider.GetComponent<Cosita>();
+            if (cosita != null && cosita == mom)
+            {
+                neighbourCositaInNeed = cosita;
+                return;
+            }
+            else
+            {
+                neighbourCositaInNeed = null;
+            }
+        }
     }
     public void SearchForNeighbours()
     {
@@ -293,6 +311,26 @@ public class Cosita : LivingEntity
                 neighbourCositaInNeed = null;
             }
         }
+    }
+
+    public void RemoveAppleFromInventory(Apple apple)
+    {
+        inventoryList.Remove(apple);
+        //Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
+        //debugUI.text = inventorySlotUI.transform.childCount.ToString();
+
+        for (int i = inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
+        {
+            Transform child = inventorySlotUI.transform.GetChild(i);
+
+            // Verifica si el hijo tiene hijos
+            if (child.childCount > 0)
+            {
+                Destroy(child.GetChild(0).gameObject);
+                return;
+            }
+        }
+
     }
     public IResource SensingResources(string thingWanted) // I pass a string with the name of the thing I want
     {

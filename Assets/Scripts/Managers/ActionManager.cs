@@ -30,15 +30,17 @@ public class ActionManager : MonoBehaviour
                                         cosita.inventoryList.Count < cosita.genes.inventorySlots &&
                                         cosita.resourceTarget != null &&
                                         cosita.resourceTarget.ResourceGameObject != null &&  // Verifica que el ResourceGameObject no esté destruido
-                                         cosita.resourceTarget.ResourceType == "Food" && 
+                                         cosita.resourceTarget.ResourceType == "Food" &&
                                         cosita.AreNear(cosita.resourceTarget.ResourceGameObject, cosita.resourceTarget.InteractionDistance)
                                         ),
+            new Action(CreatureActions.FeedingBabys,10, () => cosita.childs.Count > 0 && cosita.inventoryList.Count > 0  ),
             new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
-            new Action(CreatureActions.GoingToFood, 7, () => cosita.sated < 75 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
-                                                            && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < cosita.genes.inventorySlots),
+            new Action(CreatureActions.GoingToFood, 7, () => /*cosita.sated < 75 && */ cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
+                                                            && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < (cosita.genes.inventorySlots*2)/3 ), // si tiene que tener menos de 2 tercios de su inventario lleno
             //new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
                                                     //&& cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionBetweenCositasRange )), // has to have at least half of his inventory full
            // new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
+            new Action(CreatureActions.GoingToMom, 8, () => cosita.mom!=null && cosita.isBaby && cosita.resourceTarget==null  ),
             new Action(CreatureActions.Exploring, 9, () => true)
         }; 
     }
@@ -67,6 +69,36 @@ public class ActionManager : MonoBehaviour
 
                         cosita.actionDoing = CreatureActions.GoingToFood;
                         cosita.MoveToTarget(cosita.resourceTarget.ResourceGameObject.transform.position);
+
+                        return;
+
+                    case CreatureActions.GoingToMom:
+
+                        cosita.actionDoing = CreatureActions.GoingToMom;
+                        cosita.MoveToTarget(cosita.mom.transform.position);
+
+                        return;
+
+                    case CreatureActions.FeedingBabys:
+
+                        cosita.actionDoing = CreatureActions.FeedingBabys;
+                        cosita.isBusy = true;
+
+                        Cosita hungriestBaby = cosita.childs[0];
+
+                        foreach (var food in cosita.inventoryList)
+                        {
+                            foreach (var child in cosita.childs)
+                            {
+                                if (hungriestBaby.sated < child.sated)
+                                {
+                                    hungriestBaby = child;
+                                }
+                            }
+                            cosita.RemoveAppleFromInventory(food as Apple);
+                            hungriestBaby.AddResourceToInventory(food);
+                            StartCoroutine(cosita.BusyCoolDown(2f));
+                        }
 
                         return;
 
@@ -132,22 +164,8 @@ public class ActionManager : MonoBehaviour
                         StartCoroutine(cosita.ConsumingResourceCooldown(apple as IResource));
                         //apple.Consume();
                         //Debug.Log("Quito la manzanita de mi inventario porque me la comi");
-                        cosita.inventoryList.Remove(apple);
-                        //Debug.Log("Tengo estos hijos" + cosita.inventorySlotUI.transform.childCount.ToString());
-                        //debugUI.text = inventorySlotUI.transform.childCount.ToString();
-
-                        for (int i = cosita.inventorySlotUI.transform.childCount - 1; i >= 0; i--) // empiezo de atrás a delante
-                        {
-                            Transform child = cosita.inventorySlotUI.transform.GetChild(i);
-
-                            // Verifica si el hijo tiene hijos
-                            if (child.childCount > 0)
-                            {
-                                Destroy(child.GetChild(0).gameObject);
-                                return;
-                            }
-                        }
-
+                        cosita.RemoveAppleFromInventory(apple);
+                       
                         return;
 
                    
