@@ -8,7 +8,7 @@ public class Apple : MonoBehaviour, IResource
 {
     public float energy;
     public string ResourceType => "Food";
-    public float Hydration => 20f;
+    public float Hydration => 15f;
     public float Satiety => 30f;
     public Vector3 InteractionDistance => new Vector3(1.5f, 0.5f, 1.5f);
     public float TimeToConsumeIt => 3f;

@@ -36,14 +36,14 @@ public class ActionManager : MonoBehaviour
             new Action(CreatureActions.FeedingBabys,10, () => cosita.childs.Count > 0 && cosita.inventoryList.Count > 0  ),
             new Action(CreatureActions.GoingToWater, 6,() => cosita.hydrated < 60 && cosita.resourceTarget != null && cosita.resourceTarget.ResourceType == "Water"),
             new Action(CreatureActions.GoingToFood, 7, () => /*cosita.sated < 75 && */ cosita.resourceTarget != null && cosita.resourceTarget.ResourceGameObject != null
-                                                            && cosita.resourceTarget.ResourceType == "Food" && cosita.inventoryList.Count < (cosita.genes.inventorySlots*2)/3 ), // si tiene que tener menos de 2 tercios de su inventario lleno
+                                                            && cosita.resourceTarget.ResourceType == "Food" && (cosita.inventoryList.Count ==0 || cosita.inventoryList.Count < (cosita.genes.inventorySlots*2)/3 )), // si tiene que tener menos de 2 tercios de su inventario lleno
             //new Action(CreatureActions.Sharing, 4, () => cosita.inventoryList.Count > cosita.genes.inventorySlots/2  && cosita.neighbourCositaInNeed != null && cosita.sated>60 && cosita.hydrated>60
                                                     //&& cosita.AreNear(cosita.neighbourCositaInNeed.gameObject, cosita.neighbourCositaInNeed.interactionBetweenCositasRange )), // has to have at least half of his inventory full
            // new Action(CreatureActions.GoingToNeighbour, 8, () => cosita.neighbourCositaInNeed != null && cosita.sated > 60 && cosita.hydrated>60 && cosita.inventoryList.Count > cosita.genes.inventorySlots/2  ),
-            new Action(CreatureActions.GoingToMom, 8, () => cosita.mom!=null && cosita.isBaby && cosita.resourceTarget==null  ),
+            new Action(CreatureActions.GoingToMom, 8, () => cosita.mom!=null && cosita.isBaby ),
             new Action(CreatureActions.Exploring, 9, () => true)
         }; 
-    }
+    } 
 
     public void ExecuteAction()
     {
@@ -81,24 +81,38 @@ public class ActionManager : MonoBehaviour
 
                     case CreatureActions.FeedingBabys:
 
-                        cosita.actionDoing = CreatureActions.FeedingBabys;
-                        cosita.isBusy = true;
 
                         Cosita hungriestBaby = cosita.childs[0];
 
-                        foreach (var food in cosita.inventoryList)
-                        {
-                            foreach (var child in cosita.childs)
+                        if (cosita.inventoryList[cosita.inventoryList.Count - 1] != null){
+                            IResource food = cosita.inventoryList[cosita.inventoryList.Count - 1];
+                             foreach (var child in cosita.childs) //bubble method to find hungriest baby
                             {
+
+
                                 if (hungriestBaby.sated < child.sated)
                                 {
+
                                     hungriestBaby = child;
                                 }
                             }
-                            cosita.RemoveAppleFromInventory(food as Apple);
-                            hungriestBaby.AddResourceToInventory(food);
-                            StartCoroutine(cosita.BusyCoolDown(2f));
+
+                            if (cosita.AreNear(hungriestBaby.gameObject, cosita.interactionBetweenCositasRange))
+                            {
+                                cosita.actionDoing = CreatureActions.FeedingBabys;
+
+                                hungriestBaby.AddResourceToInventory(food);
+                                cosita.RemoveAppleFromInventory(food as Apple);
+                                StartCoroutine(cosita.BusyCoolDown(2f));
+                                StartCoroutine(hungriestBaby.BusyCoolDown(2f));
+                            }
+                           
+
+
                         }
+
+
+
 
                         return;
 
@@ -173,6 +187,8 @@ public class ActionManager : MonoBehaviour
                         cosita.actionDoing = CreatureActions.Cloning;
                         cosita.Reproduce();
                         return;
+
+
                     case CreatureActions.Exploring:
                         cosita.actionDoing = CreatureActions.Exploring;
                         if (!cosita.Agent.hasPath)

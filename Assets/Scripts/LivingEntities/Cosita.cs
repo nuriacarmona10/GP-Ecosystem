@@ -75,7 +75,7 @@ public class Cosita : LivingEntity
   
     public bool isBusy = false;
 
-    private int timeToDeathByHungerAndThirsty = 1;
+    private int timeToDeathByHungerAndThirsty = 2;
 
 
 
@@ -203,7 +203,8 @@ public class Cosita : LivingEntity
 
         yield return new WaitForSeconds(time);
         transform.localScale = transform.localScale * 2;
-        genes.sensingRange = genes.sensingRange * 2;
+        genes.sensingRange = genes.sensingRange * 3;
+        isBaby = false;
 
 
 
@@ -212,20 +213,16 @@ public class Cosita : LivingEntity
 
     IEnumerator ReproductionCooldown(float time)
     {
-
-
         // Espera 5 segundos antes de permitir la siguiente acción
 
         yield return new WaitForSeconds(time);
         EcosystemManager.Instance.HandleEntityBorn(this);
-        reproductionHunger = reproductionHunger / 2;
+        reproductionHunger = 0;
+        sated /= 2;
+        hydrated /= 2;
         hasPassedReproCooldown = true;
         isBusy = false;
         
-
-
-
-
     }
 
     public void ToShare(IResource resourceToShare)
@@ -315,7 +312,6 @@ public class Cosita : LivingEntity
 
     public void RemoveAppleFromInventory(Apple apple)
     {
-        inventoryList.Remove(apple);
         //Debug.Log("Tengo estos hijos" + inventorySlotUI.transform.childCount.ToString());
         //debugUI.text = inventorySlotUI.transform.childCount.ToString();
 
@@ -327,6 +323,7 @@ public class Cosita : LivingEntity
             if (child.childCount > 0)
             {
                 Destroy(child.GetChild(0).gameObject);
+                inventoryList.Remove(apple);
                 return;
             }
         }
@@ -366,6 +363,8 @@ public class Cosita : LivingEntity
         ThirstyUI.text = "Thirsty: " + hydrated.ToString();
         hungerBar.SetSliderValue(sated);
         waterBar.SetSliderValue(hydrated);
+        debugUI.text = "Mi target es: " + resourceTarget;
+
         //debugUI.text = "Path Active: " + Agent.hasPath + " | Distancia Restante: " + Agent.remainingDistance;
         reproductionBar.SetSliderValue(reproductionHunger);
 
@@ -396,14 +395,14 @@ public class Cosita : LivingEntity
 
         }
     }
-    void OnDrawGizmos()
-    {
-        // Configura el color del radar (por ejemplo, semi-transparente y rojo)
-        Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
+    //void OnDrawGizmos()
+    //{
+    //    // Configura el color del radar (por ejemplo, semi-transparente y rojo)
+    //    Gizmos.color = new Color(1f, 0f, 0f, 0.5f);  // Rojo con algo de transparencia
 
-        // Dibuja una esfera en la posición del objeto (el radar de 15m)
-        Gizmos.DrawSphere(transform.position, genes.sensingRange);
-    }
+    //    // Dibuja una esfera en la posición del objeto (el radar de 15m)
+    //    Gizmos.DrawSphere(transform.position, genes.sensingRange);
+    //}
     
     private void SearchForResource(string resourceName)
     {
@@ -524,7 +523,6 @@ public class Cosita : LivingEntity
     }
     public void MoveToRandomPoint()
     {
-        debugUI.text = "Path Active: " + Agent.hasPath + " | Distancia Restante: " + Agent.remainingDistance;
 
         Vector3 randomPoint;
 
@@ -537,7 +535,6 @@ public class Cosita : LivingEntity
 
             if (Agent.SetDestination(randomPoint))
             {
-            debugUI.text = "Escojo un nuevo punto" + randomPoint;
 
             }
 

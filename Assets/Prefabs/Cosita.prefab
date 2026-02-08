@@ -2610,10 +2610,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   specie: 0
   speed: 1
-  hydrated: 100
-  sated: 100
+  hydrated: 50
+  sated: 50
   interactionBetweenCositasRange: {x: 2, y: 1, z: 2}
-  reproductionHunger: 80
+  reproductionHunger: 90
   reproductionHungerRate: 2
   hasPassedReproCooldown: 1
   isBaby: 0
@@ -2633,6 +2633,7 @@ MonoBehaviour:
   SlotPrefab: {fileID: 5392053177579993705, guid: ea3561ed0918f1d42810504723d23d2e, type: 3}
   appleSlotPrefab: {fileID: 2427720007102517834, guid: 1b103cf2af018a04a807fe5eb12181f8, type: 3}
   actionDoing: 0
+  childs: []
   debugUI: {fileID: 9176328779681569118}
   isBusy: 0
 --- !u!65 &4000022370161271325

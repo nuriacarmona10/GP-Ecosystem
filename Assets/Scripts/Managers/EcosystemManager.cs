@@ -58,17 +58,22 @@ public class EcosystemManager : MonoBehaviour
         {
             foreach (var popu in initialPopulations)
             {
-                
-               
+
+
                 for (int i = 0; i < popu.count; i++)
                 {
-                    Vector3 randomSpawn = new Vector3(Random.Range(-24.5f, 24.5f), 0.25f, Random.Range(-24.5f, 24.5f));
+                    Vector3 randomSpawn = new Vector3(Random.Range(120f, 210f), 0.5f, Random.Range(-9, 60f));
                     GameObject entity = Instantiate(popu.prefab, randomSpawn, Quaternion.identity);
                     LivingEntity livingEntity = entity.GetComponent<LivingEntity>();
+
+                    Collider collider = entity.GetComponent<Collider>();
+
+
+
                     if (livingEntity is Cosita cos)
                     {
                         cos.Init();
-                        cos.cositaRenderer.material.color = cos.genes.genColor;
+                        //cos.cositaRenderer.material.color = cos.genes.genColor;
                         cositaPrefab = popu.prefab; // Esto no esta bien aqui 
                         cositas.Add(cos);
 
@@ -79,9 +84,18 @@ public class EcosystemManager : MonoBehaviour
                         treePrefab = popu.prefab; // Esto no esta bien aqui 
                         trees.Add(tree);
                     }
+
+                    //if (collider != null)
+                    //{
+                    //    Debug.Log("Tengo collider y recalculo");
+
+                    //    // Calculamos la altura correcta tomando en cuenta el punto más bajo del collider
+                    //    float alturaDelCollider = collider.bounds.extents.y;
+                    //    // Ajustamos la posición del prefab para que toque el suelo
+                    //    entity.transform.position = new Vector3(entity.transform.position.x, alturaDelCollider, entity.transform.position.z);
+                    //}
+
                 }
-
-
             }
 
             cositasInitializedCountText.text = cositas.Count.ToString();
@@ -102,7 +116,7 @@ public class EcosystemManager : MonoBehaviour
         {
             cos.Init(mother);
             cos.cositaRenderer.material.color = cos.genes.genColor;
-            cos.genes.sensingRange = cos.genes.sensingRange / 2;
+            cos.genes.sensingRange = cos.genes.sensingRange / 3;
             cositas.Add(cos);
             mother.childs.Add(cos);
         }

@@ -2609,19 +2609,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   specie: 0
-  health: 100
   speed: 1
   hydrated: 30
   sated: 30
-  sensingRange: 3
   interactionBetweenCositasRange: {x: 2, y: 1, z: 2}
   reproductionHunger: 0
   reproductionHungerRate: 2
   hasPassedReproCooldown: 1
   isBaby: 1
-  timeToGrow: 15
   actionManager: {fileID: 5916065292842235871}
   cositaRenderer: {fileID: 3923738558768271279}
+  mom: {fileID: 0}
   neighbourCositaInNeed: {fileID: 0}
   Agent: {fileID: 1666855126760284348}
   count: 0
@@ -2635,6 +2633,7 @@ MonoBehaviour:
   SlotPrefab: {fileID: 5392053177579993705, guid: ea3561ed0918f1d42810504723d23d2e, type: 3}
   appleSlotPrefab: {fileID: 2427720007102517834, guid: 1b103cf2af018a04a807fe5eb12181f8, type: 3}
   actionDoing: 0
+  childs: []
   debugUI: {fileID: 9176328779681569118}
   isBusy: 0
 --- !u!65 &4000022370161271325
@@ -2670,7 +2669,7 @@ NavMeshAgent:
   m_Radius: 0.5
   m_Speed: 1
   m_Acceleration: 8
-  avoidancePriority: 50
+  avoidancePriority: 35
   m_AngularSpeed: 120
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
